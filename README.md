@@ -1,66 +1,95 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+## Teste para a empresa Onfly
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Como subir o ambiente
 
-## About Laravel
+O ambiente está dockerizado, então para que você possa rodar a aplicação, basta rodar o comando: 
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+`docker-composer up` 
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+no terminal dentro do diretório raiz, depois de ter feito o clone do mesmo.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## como acessar a aplicação
 
-## Learning Laravel
+o Software Adminer  para gerenciamento do banco subirá no seguinte endereço:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+`http://localhost:8080/`
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+A aplicação no endereço:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+`http://localhost:8000/`
 
-## Laravel Sponsors
+Obs: a aplicação não possui interface gráfica, então só poderá ser acessada com o Postman ou outro software similar. 
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-### Premium Partners
+## Rotas disponíveis 
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### User
+POST => [api/user](http://localhost:8000/api/user) cria um novo usuário.
 
-## Contributing
+```
+{
+    "name": "Jhonatas Felipe",
+    "email": "jhonatas1021@gmail.com",
+    "password": "Klapaucius1*",
+    "password_confirmation": "Klapaucius1*"
+}
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```
 
-## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+GET => [api/user] http://localhost:8000/api/user  obtém o usuário logado.
 
-## Security Vulnerabilities
+### Login
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+POST => [api/login] http://localhost:8000/api/login obtém um token de acesso para fazer as requisições na aplicação.
 
-## License
+```
+{
+    "email": "jhonatas1021@gmail.com",
+    "password": "Klapaucius1*"
+}
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+
+
+### Expenses
+
+GET => [api/expenses] http://localhost:8000/api/expenses lista todas as despesas do usuário logado.
+
+
+POST => [api/expenses] http://localhost:8000/api/expenses cria uma nova despesa.
+
+```
+{
+    "description":"Supermercado",
+    "value": 895.57,
+    "date": "2024/07/28",
+    "user_id": 2 
+}
+
+```
+
+
+PUT => [api/expenses] http://localhost:8000/api/expenses altera uma nova despesa 
+
+```
+{
+    "description":"conta de luz ",
+    "value": 895.57,
+    "date": "2024/07/28",
+    "user_id": 2
+}
+```
+
+
+### Testes
+
+Para rodar os teste da aplicações é só ultilizar o comando 
+
+`php artisan test`
+
+Obs: para que os testes funcionem é nesessário cirar o banco "Teste" na base de dados e roda o comando 
+
+`php artisan migrate --env=testing`
+
+

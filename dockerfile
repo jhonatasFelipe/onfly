@@ -36,6 +36,8 @@ RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"\
 
 RUN php composer.phar install
 
+RUN php artisan migrate 
+
 ENTRYPOINT [ "php", "artisan", "serve" ]
 CMD ["--host=0.0.0.0"]
 

@@ -8,6 +8,7 @@ use App\Models\Expenses;
 use App\Models\User;
 use App\Notifications\ExpenseCreated;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class ExpensesController extends Controller
@@ -25,7 +26,7 @@ class ExpensesController extends Controller
     }
 
 
-    public function getById(Response $response, Expenses $expenses){
+    public function getById(Request $request, Expenses $expenses){
         try{
            return  response(ExpensesResource::make($expenses));
         }
@@ -47,7 +48,7 @@ class ExpensesController extends Controller
 
             $user = User::find($request->user_id);
             $user->notify(new ExpenseCreated($expenses));
-            return  response(ExpensesResource::make($expenses));
+            return  response(ExpensesResource::make($expenses),Response::HTTP_CREATED);
         }
         catch(Exception $e){
             return response(['Message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -64,14 +65,14 @@ class ExpensesController extends Controller
                 'user_id',
 
             ]));
-           return  response(ExpensesResource::make($expenses));
+           return  response(ExpensesResource::make($expenses), Response::HTTP_OK);
         }
         catch(Exception $e){
             return response(['Message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function destroy(ExpensesRequest $request, Expenses $expenses){
+    public function destroy(Request $request, Expenses $expenses){
 
         try{
             $expenses->delete();

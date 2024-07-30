@@ -8,7 +8,7 @@ O ambiente está dockerizado, então para que você possa rodar a aplicação, b
 
 no terminal dentro do diretório raiz, depois de ter feito o clone do mesmo.
 
-## como acessar a aplicação
+## Como acessar a aplicação
 
 o Software Adminer  para gerenciamento do banco subirá no seguinte endereço:
 
@@ -18,7 +18,7 @@ A aplicação no endereço:
 
 `http://localhost:8000/`
 
-Obs: a aplicação não possui interface gráfica, então só poderá ser acessada com o Postman ou outro software similar. 
+**Obs: a aplicação não possui interface gráfica, então só poderá ser acessada com o Postman ou outro software similar.**
 
 
 ## Rotas disponíveis 
@@ -88,7 +88,7 @@ Para rodar os teste da aplicações é só utilizar o seguinte comando:
 
 `php artisan test`
 
-Obs: para que os testes funcionem é nesessário criar o banco "Teste" na base de dados e rodar o comando:
+**Obs: para que os testes funcionem é nesessário criar o banco "Teste" na base de dados e rodar o comando:**
 
 `php artisan migrate --env=testing`
 

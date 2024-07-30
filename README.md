@@ -84,11 +84,11 @@ PUT => [api/expenses] http://localhost:8000/api/expenses altera uma nova despesa
 
 ### Testes
 
-Para rodar os teste da aplicações é só ultilizar o comando 
+Para rodar os teste da aplicações é só utilizar o seguinte comando: 
 
 `php artisan test`
 
-Obs: para que os testes funcionem é nesessário cirar o banco "Teste" na base de dados e roda o comando 
+Obs: para que os testes funcionem é nesessário criar o banco "Teste" na base de dados e rodar o comando:
 
 `php artisan migrate --env=testing`
 

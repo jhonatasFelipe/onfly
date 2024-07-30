@@ -31,21 +31,16 @@ services:
     networks:
       - onfly
 
-  # onfly:
-  #   depends_on:
-  #     - db
-  #   build:
-  #     context: .
-  #   container_name: TesteOnfly
-  #   volumes: 
-  #     - type: bind
-  #       source: ./
-  #       target: /var/www/html
-  #       read_only: false
-  #   ports:
-  #     - 8000:8000
-  #   networks:
-  #     - onfly
+  onfly:
+    depends_on:
+      - db
+    build:
+      context: .
+    container_name: TesteOnfly
+    ports:
+      - 8000:8000
+    networks:
+      - onfly
 
 networks:
   onfly:

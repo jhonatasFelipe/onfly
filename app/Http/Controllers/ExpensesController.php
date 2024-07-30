@@ -5,22 +5,21 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ExpensesRequest;
 use App\Http\Resources\ExpensesResource;
 use App\Models\Expenses;
-use App\Models\User;
-use App\Notifications\ExpenseCreated;
-use Exception;
+use App\Services\ExpenseService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class ExpensesController extends Controller
 {
-    public function index(){
 
+
+    public function __construct(private ExpenseService $service){}
+    public function index(){
         try{
-            $userId = auth()->user()->id;
-            $expenses = Expenses::where('user_id', $userId)->get();
-           return response(ExpensesResource::collection($expenses), Response::HTTP_OK);
+            $expenses = $this->service->list();
+            return response(ExpensesResource::collection($expenses), Response::HTTP_OK);
         }
-        catch(Exception $e){
+        catch(\Exception $e){
             return response(['message' => 'erro ao obter despesas'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -30,8 +29,8 @@ class ExpensesController extends Controller
         try{
            return  response(ExpensesResource::make($expenses));
         }
-        catch(Exception $e){
-            
+        catch(\Exception $e){
+            return response(['Message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -39,19 +38,16 @@ class ExpensesController extends Controller
     public function create(ExpensesRequest $request){
 
         try{
-            $expenses = Expenses::create($request->only([
+            $expenses = $this->service->create($request->only([
                 'description',
                 'value',
                 'date',
                 'user_id'
             ]));
-
-            $user = User::find($request->user_id);
-            $user->notify(new ExpenseCreated($expenses));
             return  response(ExpensesResource::make($expenses),Response::HTTP_CREATED);
         }
-        catch(Exception $e){
-            return response(['Message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        catch(\Exception $e){
+            return response(['Message' => 'erro ao criar uma despesa'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -67,7 +63,7 @@ class ExpensesController extends Controller
             ]));
            return  response(ExpensesResource::make($expenses), Response::HTTP_OK);
         }
-        catch(Exception $e){
+        catch(\Exception $e){
             return response(['Message' => $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -78,7 +74,7 @@ class ExpensesController extends Controller
             $expenses->delete();
            return  response(ExpensesResource::make($expenses));
         }
-        catch(Exception $e){
+        catch(\Exception $e){
             
         }
     }

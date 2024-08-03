@@ -4,7 +4,7 @@
 
 O ambiente está dockerizado, então para que você possa rodar a aplicação, basta rodar o comando: 
 
-`docker-composer up` 
+`./deploy.sh` 
 
 no terminal dentro do diretório raiz, depois de ter feito o clone do mesmo.
 

@@ -6,9 +6,11 @@ namespace App\Providers;
 
 use App\Application\Ports\AuthenticatedUserPort;
 use App\Application\Ports\EventDispatcherPort;
+use App\Application\Ports\NotificationPort;
 use App\Application\Ports\TravelOrderPersistenceFacadeInterface;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
 use App\Infrastructure\Adapters\LaravelEventDispatcherAdapter;
+use App\Infrastructure\Adapters\LaravelNotificationAdapter;
 use App\Infrastructure\Adapters\SanctumAuthenticatedUserAdapter;
 use App\Infrastructure\Contracts\TravelOrderEloquentTranslatorInterface;
 use App\Infrastructure\Contracts\TravelOrderListQueryPort;
@@ -32,6 +34,7 @@ final class RepositoryServiceProvider extends ServiceProvider
 
         $this->app->bind(AuthenticatedUserPort::class, SanctumAuthenticatedUserAdapter::class);
         $this->app->bind(TravelOrderPersistenceFacadeInterface::class, TravelOrderPersistenceFacade::class);
+        $this->app->bind(NotificationPort::class, LaravelNotificationAdapter::class);
         $this->app->bind(EventDispatcherPort::class, LaravelEventDispatcherAdapter::class);
 
         $this->app->bind(TravelOrderEloquentTranslatorInterface::class, TravelOrderEloquentTranslator::class);

@@ -8,15 +8,34 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
     </testsuites>
     <source>
         <include>
-            <directory>app</directory>
+            <directory>app/Domain</directory>
+            <directory>app/Application</directory>
+            <directory>app/Infrastructure</directory>
+            <directory>app/Http</directory>
+            <directory>app/Notifications</directory>
         </include>
+        <exclude>
+            <directory>app/Domain/TravelOrder/Repositories</directory>
+            <directory>app/Application/Ports</directory>
+            <directory>app/Infrastructure/Contracts</directory>
+            <file>app/Http/Controllers/Controller.php</file>
+            <directory>app/Providers</directory>
+        </exclude>
     </source>
+    <coverage>
+        <report>
+            <text outputFile="php://stdout" showUncoveredFiles="true"/>
+        </report>
+    </coverage>
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>

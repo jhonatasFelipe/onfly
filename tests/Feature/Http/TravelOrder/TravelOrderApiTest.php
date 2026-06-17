@@ -102,6 +102,16 @@ final class TravelOrderApiTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_update_status_returns_not_found_for_missing_order(): void
+    {
+        $admin = UserModel::factory()->admin()->create();
+        Sanctum::actingAs($admin);
+
+        $this->patchJson('/api/v1/travel-orders/550e8400-e29b-41d4-a716-446655440000/status', [
+            'status' => 'aprovado',
+        ])->assertNotFound();
+    }
+
     public function test_admin_can_approve_order_and_notification_is_sent(): void
     {
         Notification::fake();

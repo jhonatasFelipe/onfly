@@ -1,5 +1,6 @@
 .PHONY: up down build build-fresh restart logs shell artisan composer \
-        install-laravel configure-env migrate fix-permissions wait-app wait-mysql post-up setup ps about docs
+        install-laravel configure-env migrate fix-permissions wait-app wait-mysql post-up setup ps about docs \
+        install-deps seed key-generate
 
 up: post-up
 
@@ -87,18 +88,41 @@ migrate:
 	@$(MAKE) wait-mysql
 	docker compose exec -T app php artisan migrate --force
 
+key-generate:
+	@docker compose exec -T app bash -c '\
+		if ! grep -qE "^APP_KEY=base64:" .env 2>/dev/null; then \
+			php artisan key:generate --force; \
+			echo "APP_KEY gerada."; \
+		else \
+			echo "APP_KEY já configurada."; \
+		fi'
+
+install-deps:
+	docker compose exec -T app composer install --no-interaction
+	docker compose exec -T app npm install
+	docker compose exec -T app npm run build
+
+seed:
+	@$(MAKE) wait-mysql
+	docker compose exec -T app php artisan db:seed --force
+
 install-laravel:
 	@if [ -f artisan ]; then \
 		echo "Laravel já está instalado."; \
 		$(MAKE) configure-env; \
+		$(MAKE) key-generate; \
 		$(MAKE) migrate; \
+		$(MAKE) install-deps; \
+		$(MAKE) seed; \
 		$(MAKE) fix-permissions; \
 	else \
 		docker compose exec -T app composer create-project laravel/laravel:^12.0 /tmp/laravel --prefer-dist --no-interaction; \
 		docker compose exec -T app bash -c 'shopt -s dotglob nullglob && for f in /tmp/laravel/* /tmp/laravel/.[!.]*; do name=$$(basename "$$f"); [ -e "/var/www/$$name" ] || cp -r "$$f" /var/www/; done && rm -rf /tmp/laravel'; \
 		$(MAKE) configure-env; \
-		docker compose exec -T app php artisan key:generate --force; \
+		$(MAKE) key-generate; \
 		$(MAKE) migrate; \
+		$(MAKE) install-deps; \
+		$(MAKE) seed; \
 		$(MAKE) fix-permissions; \
 	fi
 

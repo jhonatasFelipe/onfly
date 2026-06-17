@@ -1,5 +1,8 @@
 <?php
 
+use App\Domain\TravelOrder\Exceptions\InvalidTravelOrderStateException;
+use App\Domain\TravelOrder\Exceptions\TravelOrderNotFoundException;
+use App\Domain\TravelOrder\Exceptions\UnauthorizedTravelOrderAccessException;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -46,9 +49,21 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        $exceptions->render(function (ModelNotFoundException $e, Request $request) {
+        $exceptions->render(function (ModelNotFoundException|TravelOrderNotFoundException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json(['message' => 'Resource not found.'], 404);
+            }
+        });
+
+        $exceptions->render(function (InvalidTravelOrderStateException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => $e->getMessage()], 409);
+            }
+        });
+
+        $exceptions->render(function (UnauthorizedTravelOrderAccessException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => $e->getMessage()], 403);
             }
         });
 

@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use App\Infrastructure\Persistence\Eloquent\TravelOrderModel;
+use App\Policies\TravelOrderPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Registra serviços da aplicação.
      */
     public function register(): void
     {
@@ -15,10 +18,10 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bootstrap any application services.
+     * Inicializa serviços da aplicação (policies, etc.).
      */
     public function boot(): void
     {
-        //
+        Gate::policy(TravelOrderModel::class, TravelOrderPolicy::class);
     }
 }

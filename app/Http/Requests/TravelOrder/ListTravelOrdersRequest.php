@@ -24,11 +24,17 @@ final class ListTravelOrdersRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // Filtra por status do pedido (solicitado, aprovado ou cancelado).
             'status' => ['nullable', Rule::enum(TravelOrderStatus::class)],
+            // Filtra por destino (busca parcial).
             'destination' => ['nullable', 'string', 'max:255'],
+            // Data inicial de criação do pedido.
             'created_from' => ['nullable', 'date'],
+            // Data final de criação do pedido.
             'created_to' => ['nullable', 'date'],
+            // Data inicial de partida.
             'departure_from' => ['nullable', 'date'],
+            // Data final de partida.
             'departure_to' => ['nullable', 'date'],
         ];
     }

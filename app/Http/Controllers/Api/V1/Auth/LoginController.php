@@ -4,33 +4,43 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Application\Auth\DTOs\LoginUserInput;
+use App\Application\Auth\UseCases\LoginUserUseCase;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Infrastructure\Persistence\Eloquent\UserModel;
+use App\Http\Resources\UserResource;
+use Dedoc\Scramble\Attributes\Group;
+use Dedoc\Scramble\Attributes\Response;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 
 /**
- * Autentica usuário via API — delega validação ao LoginRequest.
+ * Autentica usuário via API — delega ao LoginUserUseCase.
  */
+#[Group('Autenticação')]
 final class LoginController extends Controller
 {
-    public function __invoke(LoginRequest $request): JsonResponse
+    /**
+     * Autenticar usuário
+     *
+     * Valida email e senha e retorna um token Bearer para uso nos endpoints protegidos.
+     *
+     * @unauthenticated
+     * @operationId auth.loginUser
+     */
+    #[Response(200, 'Login realizado com token', type: 'array{token: string, user: array{id: int, name: string, email: string}}')]
+    #[Response(401, 'Credenciais inválidas', type: 'array{message: string}')]
+    #[Response(422, 'Validação falhou', type: 'array{message: string, errors: array<string, string[]>}')]
+    #[Response(429, 'Muitas tentativas', type: 'array{message: string}')]
+    public function __invoke(LoginRequest $request, LoginUserUseCase $useCase): JsonResponse
     {
-        if (! Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Invalid credentials.'], 401);
-        }
-
-        /** @var UserModel $user */
-        $user = Auth::user();
+        $output = $useCase->execute(new LoginUserInput(
+            email: $request->validated('email'),
+            password: $request->validated('password'),
+        ));
 
         return response()->json([
-            'token' => $user->createToken('api')->plainTextToken,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
+            'token' => $output->token,
+            'user' => new UserResource($output->user),
         ]);
     }
 }

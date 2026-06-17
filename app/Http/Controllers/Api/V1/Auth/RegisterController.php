@@ -4,35 +4,43 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Application\Auth\DTOs\RegisterUserInput;
+use App\Application\Auth\UseCases\RegisterUserUseCase;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
-use App\Infrastructure\Persistence\Eloquent\UserModel;
+use App\Http\Resources\UserResource;
+use Dedoc\Scramble\Attributes\Group;
+use Dedoc\Scramble\Attributes\Response;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
 
 /**
- * Registra novo usuário via API — delega validação ao RegisterRequest.
+ * Registra novo usuário via API — delega ao RegisterUserUseCase.
  */
+#[Group('Autenticação')]
 final class RegisterController extends Controller
 {
-    public function __invoke(RegisterRequest $request): JsonResponse
+    /**
+     * Registrar usuário
+     *
+     * Cria uma nova conta de usuário e retorna um token Sanctum para autenticação nos demais endpoints.
+     *
+     * @unauthenticated
+     * @operationId auth.registerUser
+     */
+    #[Response(201, 'Usuário registrado com token', type: 'array{token: string, user: array{id: int, name: string, email: string}}')]
+    #[Response(422, 'Validação falhou', type: 'array{message: string, errors: array<string, string[]>}')]
+    #[Response(429, 'Muitas tentativas', type: 'array{message: string}')]
+    public function __invoke(RegisterRequest $request, RegisterUserUseCase $useCase): JsonResponse
     {
-        $user = UserModel::create([
-            'name' => $request->validated('name'),
-            'email' => $request->validated('email'),
-            'password' => Hash::make($request->validated('password')),
-            'is_admin' => false,
-        ]);
-
-        $token = $user->createToken('api')->plainTextToken;
+        $output = $useCase->execute(new RegisterUserInput(
+            name: $request->validated('name'),
+            email: $request->validated('email'),
+            password: $request->validated('password'),
+        ));
 
         return response()->json([
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-            ],
+            'token' => $output->token,
+            'user' => new UserResource($output->user),
         ], 201);
     }
 }

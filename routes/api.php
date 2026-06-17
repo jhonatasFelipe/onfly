@@ -11,8 +11,8 @@ use App\Http\Controllers\Api\V1\TravelOrder\StoreTravelOrderController;
 use App\Http\Controllers\Api\V1\TravelOrder\UpdateTravelOrderStatusController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('v1')->group(function (): void {
-    Route::prefix('auth')->group(function (): void {
+Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
+    Route::prefix('auth')->middleware('throttle:auth')->group(function (): void {
         Route::post('register', RegisterController::class);
         Route::post('login', LoginController::class);
         Route::post('logout', LogoutController::class)->middleware('auth:sanctum');

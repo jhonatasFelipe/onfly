@@ -1,60 +1,120 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Onfly — Travel Orders API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST para gestão de pedidos de viagem corporativa, construída com Laravel 12 e Clean Architecture.
 
-## About Laravel
+## Requisitos
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Docker e Docker Compose
+- Make
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Setup
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+make setup
+```
 
-## Learning Laravel
+## Comandos úteis
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+make up          # Sobe os containers
+make down        # Para os containers
+make shell       # Acessa o container da aplicação
+make artisan cmd="test"   # Executa os testes
+make docs        # Exibe URL da documentação da API
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Documentação da API (Scramble)
 
-## Laravel Sponsors
+A documentação interativa OpenAPI é gerada automaticamente pelo [Scramble](https://scramble.dedoc.co):
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Recurso | URL |
+|---------|-----|
+| UI (Swagger/Elements) | `http://localhost:8080/docs/api` |
+| Spec OpenAPI (JSON) | `http://localhost:8080/docs/api.json` |
 
-### Premium Partners
+### Acesso
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+| Ambiente | Quem acessa |
+|----------|-------------|
+| `local` | Qualquer pessoa (sem autenticação) |
+| Demais (`testing`, `staging`, `production`, …) | Apenas administradores autenticados |
 
-## Contributing
+Em ambientes restritos, há duas formas de acesso:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+**1. Navegador (sessão web)**
 
-## Code of Conduct
+1. Acesse `http://localhost:8080/admin/login`
+2. Entre com um usuário `is_admin = true` (ex.: `admin@example.com` / `password` do seeder)
+3. Acesse `http://localhost:8080/docs/api`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+**2. Spec JSON via Bearer token (Sanctum)**
 
-## Security Vulnerabilities
+```bash
+# Obter token de admin
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Baixar a spec OpenAPI
+curl http://localhost:8080/docs/api.json \
+  -H "Authorization: Bearer {token}"
+```
 
-## License
+Na UI do Scramble, use o botão **Authorize** e informe o token obtido via login da API para testar endpoints protegidos.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# onfly
+### Autenticação na API
+
+Os endpoints protegidos usam **Laravel Sanctum** (Bearer token):
+
+```bash
+# Obter token
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'
+
+# Usar token
+curl http://localhost:8080/api/v1/travel-orders \
+  -H "Authorization: Bearer {token}"
+```
+
+## Endpoints principais
+
+| Método | Rota | Auth |
+|--------|------|------|
+| POST | `/api/v1/auth/register` | Público |
+| POST | `/api/v1/auth/login` | Público |
+| POST | `/api/v1/auth/logout` | Sanctum |
+| POST | `/api/v1/travel-orders` | Sanctum |
+| GET | `/api/v1/travel-orders` | Sanctum |
+| GET | `/api/v1/travel-orders/{id}` | Sanctum |
+| PATCH | `/api/v1/travel-orders/{id}/status` | Sanctum |
+
+Consulte `/docs/api` para schemas completos, filtros e códigos de resposta.
+
+### Rate limiting
+
+Todos os endpoints possuem limite de requisições configurável em `config/rate-limiting.php`:
+
+| Grupo | Rotas | Padrão |
+|-------|-------|--------|
+| `auth` | login, register | 10/min por IP |
+| `api` | travel-orders, logout | 60/min por usuário ou IP |
+| `web-login` | `/admin/login` | 5/min por IP |
+| `web` | rotas web gerais | 60/min por IP |
+| `docs` | `/docs/api`, `/docs/api.json` | 30/min por usuário ou IP |
+
+Variáveis de ambiente: `RATE_LIMIT_AUTH`, `RATE_LIMIT_API`, `RATE_LIMIT_WEB_LOGIN`, `RATE_LIMIT_WEB`, `RATE_LIMIT_DOCS`.
+
+Respostas `429` retornam: `{"message": "Muitas tentativas. Tente novamente mais tarde."}`
+
+Na documentação Scramble (`/docs/api`), cada endpoint exibe os limites aplicados na descrição da operação, na extensão OpenAPI `x-rateLimit` e na resposta `429`.
+
+## Testes
+
+```bash
+make artisan cmd="test"
+```
+
+## Licença
+
+MIT

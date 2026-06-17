@@ -1,5 +1,5 @@
 .PHONY: up down build build-fresh restart logs shell artisan composer \
-        install-laravel configure-env migrate fix-permissions wait-app wait-mysql post-up setup ps about
+        install-laravel configure-env migrate fix-permissions wait-app wait-mysql post-up setup ps about docs
 
 up: post-up
 
@@ -39,6 +39,9 @@ composer:
 
 about:
 	docker compose exec app php artisan about
+
+docs:
+	@echo "API docs: http://localhost:8080/docs/api"
 
 wait-app:
 	@echo "Aguardando container app..."

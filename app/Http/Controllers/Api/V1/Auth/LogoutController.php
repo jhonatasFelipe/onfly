@@ -4,19 +4,32 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Auth;
 
+use App\Application\Auth\UseCases\LogoutUserUseCase;
 use App\Http\Controllers\Controller;
+use Dedoc\Scramble\Attributes\Group;
+use Dedoc\Scramble\Attributes\Response;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * Revoga o token Sanctum do usuário autenticado.
  */
+#[Group('Autenticação')]
 final class LogoutController extends Controller
 {
-    public function __invoke(Request $request): JsonResponse
+    /**
+     * Encerrar sessão
+     *
+     * Revoga o token Sanctum atual do usuário autenticado, invalidando o acesso à API.
+     *
+     * @operationId auth.logoutUser
+     */
+    #[Response(200, 'Logout realizado', type: 'array{message: string}')]
+    #[Response(401, 'Não autenticado', type: 'array{message: string}')]
+    #[Response(429, 'Muitas tentativas', type: 'array{message: string}')]
+    public function __invoke(LogoutUserUseCase $useCase): JsonResponse
     {
-        $request->user()?->currentAccessToken()?->delete();
+        $useCase->execute();
 
-        return response()->json(['message' => 'Logged out successfully.']);
+        return response()->json(['message' => 'Logout realizado com sucesso.']);
     }
 }

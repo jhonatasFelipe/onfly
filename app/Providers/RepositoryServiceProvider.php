@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Application\Ports\ApiTokenPort;
 use App\Application\Ports\AuthenticatedUserPort;
 use App\Application\Ports\EventDispatcherPort;
 use App\Application\Ports\NotificationPort;
+use App\Application\Ports\SessionAuthenticationPort;
 use App\Application\Ports\TravelOrderPersistenceFacadeInterface;
+use App\Application\Ports\UserAuthenticationPort;
+use App\Application\Ports\UserRegistrationPort;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
+use App\Infrastructure\Adapters\Auth\EloquentUserAuthenticationAdapter;
+use App\Infrastructure\Adapters\Auth\EloquentUserRegistrationAdapter;
+use App\Infrastructure\Adapters\Auth\LaravelSessionAuthenticationAdapter;
+use App\Infrastructure\Adapters\Auth\SanctumApiTokenAdapter;
 use App\Infrastructure\Adapters\LaravelEventDispatcherAdapter;
 use App\Infrastructure\Adapters\LaravelNotificationAdapter;
 use App\Infrastructure\Adapters\SanctumAuthenticatedUserAdapter;
@@ -33,6 +41,10 @@ final class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(TravelOrderRepositoryInterface::class, EloquentTravelOrderRepository::class);
 
         $this->app->bind(AuthenticatedUserPort::class, SanctumAuthenticatedUserAdapter::class);
+        $this->app->bind(UserAuthenticationPort::class, EloquentUserAuthenticationAdapter::class);
+        $this->app->bind(UserRegistrationPort::class, EloquentUserRegistrationAdapter::class);
+        $this->app->bind(ApiTokenPort::class, SanctumApiTokenAdapter::class);
+        $this->app->bind(SessionAuthenticationPort::class, LaravelSessionAuthenticationAdapter::class);
         $this->app->bind(TravelOrderPersistenceFacadeInterface::class, TravelOrderPersistenceFacade::class);
         $this->app->bind(NotificationPort::class, LaravelNotificationAdapter::class);
         $this->app->bind(EventDispatcherPort::class, LaravelEventDispatcherAdapter::class);

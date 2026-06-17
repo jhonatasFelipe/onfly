@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\Auth\Exceptions\InvalidCredentialsException;
 use App\Domain\TravelOrder\Exceptions\InvalidTravelOrderStateException;
 use App\Domain\TravelOrder\Exceptions\TravelOrderNotFoundException;
 use App\Domain\TravelOrder\Exceptions\UnauthorizedTravelOrderAccessException;
@@ -13,6 +14,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,6 +30,20 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (InvalidCredentialsException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return response()->json(['message' => $e->getMessage()], 401);
+            }
+        });
+
+        $exceptions->render(function (TooManyRequestsHttpException $e, Request $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Muitas tentativas. Tente novamente mais tarde.',
+                ], 429);
+            }
+        });
+
         $exceptions->render(function (ValidationException $e, Request $request) {
             if ($request->is('api/*')) {
                 return response()->json([

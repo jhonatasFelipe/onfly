@@ -20,11 +20,15 @@ final class TravelOrderResource extends JsonResource
         $order = $this->resource;
 
         return [
+            /** @format uuid */
             'id' => $order->id()->value(),
             'requester_name' => $order->requesterName()->value(),
             'destination' => $order->destination()->value(),
+            /** @format date */
             'departure_date' => $order->period()->departure->format('Y-m-d'),
+            /** @format date */
             'return_date' => $order->period()->return->format('Y-m-d'),
+            /** @var 'solicitado'|'aprovado'|'cancelado' */
             'status' => $order->status()->value,
         ];
     }

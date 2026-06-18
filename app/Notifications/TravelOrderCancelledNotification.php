@@ -17,7 +17,7 @@ class TravelOrderCancelledNotification extends Notification implements ShouldQue
     use Queueable;
 
     /**
-     * @param  array<string, mixed>  $payload
+     * @param  array{order_id: string, user_id: int, status: string}  $payload
      */
     public function __construct(private readonly array $payload) {}
 
@@ -38,7 +38,7 @@ class TravelOrderCancelledNotification extends Notification implements ShouldQue
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{order_id: string, user_id: int, status: string}
      */
     public function toArray(object $notifiable): array
     {

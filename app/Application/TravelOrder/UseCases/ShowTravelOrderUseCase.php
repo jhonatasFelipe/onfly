@@ -10,7 +10,6 @@ use App\Application\TravelOrder\DTOs\ShowTravelOrderOutput;
 use App\Domain\TravelOrder\Exceptions\TravelOrderNotFoundException;
 use App\Domain\TravelOrder\Exceptions\UnauthorizedTravelOrderAccessException;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
-use App\Domain\TravelOrder\ValueObjects\TravelOrderId;
 
 /**
  * Recupera um pedido de viagem, respeitando ownership (usuário) ou perfil admin.
@@ -28,7 +27,7 @@ final class ShowTravelOrderUseCase
      */
     public function execute(ShowTravelOrderInput $input): ShowTravelOrderOutput
     {
-        $order = $this->orders->findById(TravelOrderId::fromString($input->orderId))
+        $order = $this->orders->findById($input->orderId)
             ?? throw new TravelOrderNotFoundException('Travel order not found.');
 
         if (! $this->user->isAdmin() && ! $order->belongsTo($this->user->userId())) {

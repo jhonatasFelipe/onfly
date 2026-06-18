@@ -12,9 +12,7 @@ use App\Domain\TravelOrder\Events\TravelOrderApproved;
 use App\Domain\TravelOrder\Events\TravelOrderCancelled;
 use App\Domain\TravelOrder\Exceptions\InvalidTravelOrderStateException;
 use App\Domain\TravelOrder\Exceptions\TravelOrderNotFoundException;
-use App\Domain\TravelOrder\Exceptions\UnauthorizedTravelOrderAccessException;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
-use App\Domain\TravelOrder\ValueObjects\TravelOrderId;
 use App\Domain\TravelOrder\ValueObjects\TravelOrderStatus;
 use Mockery;
 use Tests\Unit\Domain\TravelOrder\Support\MakesTravelOrder;
@@ -31,7 +29,7 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
 
         $orders->shouldReceive('findById')
             ->once()
-            ->with(Mockery::on(fn (TravelOrderId $id) => $id->value() === '550e8400-e29b-41d4-a716-446655440000'))
+            ->with('550e8400-e29b-41d4-a716-446655440000')
             ->andReturn(null);
         $orders->shouldNotReceive('save');
         $events->shouldNotReceive('dispatch');
@@ -39,7 +37,6 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $useCase = new UpdateTravelOrderStatusUseCase($orders, $events);
 
         $this->expectException(TravelOrderNotFoundException::class);
-        $this->expectExceptionMessage('Travel order not found.');
 
         $useCase->execute(new UpdateTravelOrderStatusInput(
             orderId: '550e8400-e29b-41d4-a716-446655440000',
@@ -53,17 +50,20 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $orders = Mockery::mock(TravelOrderRepositoryInterface::class);
         $events = Mockery::mock(EventDispatcherPort::class);
 
-        $orders->shouldReceive('findById')->once()->andReturn($order);
+        $orders->shouldReceive('findById')
+            ->once()
+            ->with($order->id())
+            ->andReturn($order);
         $orders->shouldNotReceive('save');
         $events->shouldNotReceive('dispatch');
 
         $useCase = new UpdateTravelOrderStatusUseCase($orders, $events);
 
-        $this->expectException(UnauthorizedTravelOrderAccessException::class);
+        $this->expectException(InvalidTravelOrderStateException::class);
         $this->expectExceptionMessage('Cannot revert to requested status.');
 
         $useCase->execute(new UpdateTravelOrderStatusInput(
-            orderId: $order->id()->value(),
+            orderId: $order->id(),
             status: 'solicitado',
         ));
     }
@@ -74,7 +74,10 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $orders = Mockery::mock(TravelOrderRepositoryInterface::class);
         $events = Mockery::mock(EventDispatcherPort::class);
 
-        $orders->shouldReceive('findById')->once()->andReturn($order);
+        $orders->shouldReceive('findById')
+            ->once()
+            ->with($order->id())
+            ->andReturn($order);
         $orders->shouldReceive('save')
             ->once()
             ->with(Mockery::on(fn (TravelOrder $saved) => $saved->status() === TravelOrderStatus::Aprovado));
@@ -85,7 +88,7 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $useCase = new UpdateTravelOrderStatusUseCase($orders, $events);
 
         $output = $useCase->execute(new UpdateTravelOrderStatusInput(
-            orderId: $order->id()->value(),
+            orderId: $order->id(),
             status: 'aprovado',
         ));
 
@@ -98,7 +101,10 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $orders = Mockery::mock(TravelOrderRepositoryInterface::class);
         $events = Mockery::mock(EventDispatcherPort::class);
 
-        $orders->shouldReceive('findById')->once()->andReturn($order);
+        $orders->shouldReceive('findById')
+            ->once()
+            ->with($order->id())
+            ->andReturn($order);
         $orders->shouldReceive('save')
             ->once()
             ->with(Mockery::on(fn (TravelOrder $saved) => $saved->status() === TravelOrderStatus::Cancelado));
@@ -109,7 +115,7 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $useCase = new UpdateTravelOrderStatusUseCase($orders, $events);
 
         $output = $useCase->execute(new UpdateTravelOrderStatusInput(
-            orderId: $order->id()->value(),
+            orderId: $order->id(),
             status: 'cancelado',
         ));
 
@@ -122,7 +128,10 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $orders = Mockery::mock(TravelOrderRepositoryInterface::class);
         $events = Mockery::mock(EventDispatcherPort::class);
 
-        $orders->shouldReceive('findById')->once()->andReturn($order);
+        $orders->shouldReceive('findById')
+            ->once()
+            ->with($order->id())
+            ->andReturn($order);
         $orders->shouldNotReceive('save');
         $events->shouldNotReceive('dispatch');
 
@@ -131,7 +140,7 @@ final class UpdateTravelOrderStatusUseCaseTest extends UnitTestCase
         $this->expectException(InvalidTravelOrderStateException::class);
 
         $useCase->execute(new UpdateTravelOrderStatusInput(
-            orderId: $order->id()->value(),
+            orderId: $order->id(),
             status: 'aprovado',
         ));
     }

@@ -10,8 +10,6 @@ use App\Application\TravelOrder\UseCases\CreateTravelOrderUseCase;
 use App\Domain\TravelOrder\Entities\TravelOrder;
 use App\Domain\TravelOrder\Exceptions\InvalidTravelPeriodException;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
-use App\Domain\TravelOrder\ValueObjects\RequesterName;
-use App\Domain\TravelOrder\ValueObjects\UserId;
 use Mockery;
 use Tests\Unit\UnitTestCase;
 
@@ -22,13 +20,13 @@ final class CreateTravelOrderUseCaseTest extends UnitTestCase
         $repository = Mockery::mock(TravelOrderRepositoryInterface::class);
         $user = Mockery::mock(AuthenticatedUserPort::class);
 
-        $user->shouldReceive('userId')->once()->andReturn(UserId::fromInt(1));
-        $user->shouldReceive('requesterName')->once()->andReturn(RequesterName::fromString('Jane'));
+        $user->shouldReceive('userId')->once()->andReturn(1);
+        $user->shouldReceive('requesterName')->once()->andReturn('Jane');
 
         $repository->shouldReceive('save')
             ->once()
-            ->with(Mockery::on(fn (TravelOrder $order) => $order->id()->value() !== ''
-                && $order->destination()->value() === 'Tokyo'));
+            ->with(Mockery::on(fn (TravelOrder $order) => $order->id() !== ''
+                && $order->destination() === 'Tokyo'));
 
         $useCase = new CreateTravelOrderUseCase($repository, $user);
 
@@ -38,7 +36,7 @@ final class CreateTravelOrderUseCaseTest extends UnitTestCase
             returnDate: '2026-09-10',
         ));
 
-        $this->assertSame('Tokyo', $output->order->destination()->value());
+        $this->assertSame('Tokyo', $output->order->destination());
     }
 
     public function test_propagates_invalid_travel_period_exception(): void
@@ -46,8 +44,8 @@ final class CreateTravelOrderUseCaseTest extends UnitTestCase
         $repository = Mockery::mock(TravelOrderRepositoryInterface::class);
         $user = Mockery::mock(AuthenticatedUserPort::class);
 
-        $user->shouldReceive('userId')->once()->andReturn(UserId::fromInt(1));
-        $user->shouldReceive('requesterName')->once()->andReturn(RequesterName::fromString('Jane'));
+        $user->shouldReceive('userId')->once()->andReturn(1);
+        $user->shouldReceive('requesterName')->once()->andReturn('Jane');
         $repository->shouldNotReceive('save');
 
         $useCase = new CreateTravelOrderUseCase($repository, $user);

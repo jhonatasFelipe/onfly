@@ -20,7 +20,7 @@ final class TravelOrderPolicyTest extends TestCase
     {
         parent::setUp();
 
-        $this->policy = new TravelOrderPolicy();
+        $this->policy = new TravelOrderPolicy;
     }
 
     public function test_admin_can_cancel_travel_order(): void

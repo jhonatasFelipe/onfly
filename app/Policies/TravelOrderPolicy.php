@@ -15,7 +15,7 @@ final class TravelOrderPolicy
     /**
      * Apenas administradores podem cancelar pedidos de viagem.
      */
-    public function cancel(UserModel $user, TravelOrderModel $order): bool
+    public function cancel(UserModel $user, TravelOrderModel $_order): bool
     {
         return $user->is_admin;
     }
@@ -23,7 +23,7 @@ final class TravelOrderPolicy
     /**
      * Apenas administradores podem aprovar pedidos de viagem.
      */
-    public function approve(UserModel $user, TravelOrderModel $order): bool
+    public function approve(UserModel $user, TravelOrderModel $_order): bool
     {
         return $user->is_admin;
     }

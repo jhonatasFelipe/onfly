@@ -23,7 +23,7 @@ final class LaravelNotificationAdapter implements NotificationPort
 
     public function notifyApproved(TravelOrderApproved $event): void
     {
-        $user = UserModel::findOrFail($event->userId->value());
+        $user = UserModel::findOrFail($event->userId);
         $payload = $this->notificationFacade->approvedPayload($event);
 
         $user->notify(new TravelOrderApprovedNotification($payload));
@@ -31,7 +31,7 @@ final class LaravelNotificationAdapter implements NotificationPort
 
     public function notifyCancelled(TravelOrderCancelled $event): void
     {
-        $user = UserModel::findOrFail($event->userId->value());
+        $user = UserModel::findOrFail($event->userId);
         $payload = $this->notificationFacade->cancelledPayload($event);
 
         $user->notify(new TravelOrderCancelledNotification($payload));

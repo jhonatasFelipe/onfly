@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Domain\TravelOrder\ValueObjects\TravelOrderId;
+use App\Domain\Shared\ValueObjects\Uuid;
 use App\Infrastructure\Persistence\Eloquent\TravelOrderModel;
 use App\Infrastructure\Persistence\Eloquent\UserModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,7 +23,7 @@ class TravelOrderModelFactory extends Factory
         $return = (clone $departure)->modify('+'.fake()->numberBetween(1, 14).' days');
 
         return [
-            'id' => TravelOrderId::generate()->value(),
+            'id' => Uuid::generate()->value(),
             'user_id' => UserModel::factory(),
             'requester_name' => fake()->name(),
             'destination' => fake()->city(),

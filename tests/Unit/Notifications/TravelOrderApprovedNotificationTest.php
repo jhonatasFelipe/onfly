@@ -18,7 +18,7 @@ final class TravelOrderApprovedNotificationTest extends TestCase
             'status' => 'aprovado',
         ]);
 
-        $this->assertSame(['mail', 'database'], $notification->via(new \stdClass()));
+        $this->assertSame(['mail', 'database'], $notification->via(new \stdClass));
     }
 
     public function test_to_mail_contains_order_id(): void
@@ -29,7 +29,7 @@ final class TravelOrderApprovedNotificationTest extends TestCase
             'status' => 'aprovado',
         ]);
 
-        $mail = $notification->toMail(new \stdClass());
+        $mail = $notification->toMail(new \stdClass);
 
         $this->assertInstanceOf(MailMessage::class, $mail);
         $this->assertSame('Pedido de viagem aprovado', $mail->subject);
@@ -44,6 +44,6 @@ final class TravelOrderApprovedNotificationTest extends TestCase
         ];
         $notification = new TravelOrderApprovedNotification($payload);
 
-        $this->assertSame($payload, $notification->toArray(new \stdClass()));
+        $this->assertSame($payload, $notification->toArray(new \stdClass));
     }
 }

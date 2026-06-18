@@ -21,9 +21,9 @@ final class TravelOrderResource extends JsonResource
 
         return [
             /** @format uuid */
-            'id' => $order->id()->value(),
-            'requester_name' => $order->requesterName()->value(),
-            'destination' => $order->destination()->value(),
+            'id' => $order->id(),
+            'requester_name' => $order->requesterName(),
+            'destination' => $order->destination(),
             /** @format date */
             'departure_date' => $order->period()->departure->format('Y-m-d'),
             /** @format date */

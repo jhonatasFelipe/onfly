@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Resources;
 
-use App\Http\Resources\TravelOrderResource;
 use App\Domain\TravelOrder\ValueObjects\TravelOrderStatus;
+use App\Http\Resources\TravelOrderResource;
 use Illuminate\Http\Request;
 use Tests\TestCase;
 use Tests\Unit\Domain\TravelOrder\Support\MakesTravelOrder;

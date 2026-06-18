@@ -36,9 +36,9 @@ final class StoreTravelOrderController extends Controller
         CreateTravelOrderUseCase $useCase,
     ): JsonResponse {
         $output = $useCase->execute(new CreateTravelOrderInput(
-            destination: $request->validated('destination'),
-            departureDate: $request->validated('departure_date'),
-            returnDate: $request->validated('return_date'),
+            destination: $request->string('destination')->value(),
+            departureDate: $request->string('departure_date')->value(),
+            returnDate: $request->string('return_date')->value(),
         ));
 
         return (new TravelOrderResource($output->order))

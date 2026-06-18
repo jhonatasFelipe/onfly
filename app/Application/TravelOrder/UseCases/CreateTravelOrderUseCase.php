@@ -9,7 +9,6 @@ use App\Application\TravelOrder\DTOs\CreateTravelOrderInput;
 use App\Application\TravelOrder\DTOs\CreateTravelOrderOutput;
 use App\Domain\TravelOrder\Entities\TravelOrder;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
-use App\Domain\TravelOrder\ValueObjects\Destination;
 use App\Domain\TravelOrder\ValueObjects\TravelPeriod;
 
 /**
@@ -27,7 +26,7 @@ final class CreateTravelOrderUseCase
         $order = TravelOrder::create(
             userId: $this->user->userId(),
             requesterName: $this->user->requesterName(),
-            destination: Destination::fromString($input->destination),
+            destination: $input->destination,
             period: TravelPeriod::fromStrings($input->departureDate, $input->returnDate),
         );
 

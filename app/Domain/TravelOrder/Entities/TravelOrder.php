@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domain\TravelOrder\Entities;
 
+use App\Domain\Shared\ValueObjects\Uuid;
 use App\Domain\TravelOrder\Events\TravelOrderApproved;
 use App\Domain\TravelOrder\Events\TravelOrderCancelled;
 use App\Domain\TravelOrder\Exceptions\InvalidTravelOrderStateException;
-use App\Domain\TravelOrder\ValueObjects\Destination;
-use App\Domain\TravelOrder\ValueObjects\RequesterName;
-use App\Domain\TravelOrder\ValueObjects\TravelOrderId;
 use App\Domain\TravelOrder\ValueObjects\TravelOrderStatus;
 use App\Domain\TravelOrder\ValueObjects\TravelPeriod;
-use App\Domain\TravelOrder\ValueObjects\UserId;
+use InvalidArgumentException;
 
 /**
  * Aggregate root de pedido de viagem — encapsula estado, transições e eventos de domínio.
@@ -23,39 +21,46 @@ final class TravelOrder
     private array $domainEvents = [];
 
     private function __construct(
-        private readonly TravelOrderId $id,
-        private readonly UserId $userId,
-        private readonly RequesterName $requesterName,
-        private readonly Destination $destination,
+        private readonly string $id,
+        private readonly int $userId,
+        private readonly string $requesterName,
+        private readonly string $destination,
         private readonly TravelPeriod $period,
         private TravelOrderStatus $status,
     ) {}
 
     public static function create(
-        UserId $userId,
-        RequesterName $requesterName,
-        Destination $destination,
+        int $userId,
+        string $requesterName,
+        string $destination,
         TravelPeriod $period,
     ): self {
         return new self(
-            id: TravelOrderId::generate(),
-            userId: $userId,
-            requesterName: $requesterName,
-            destination: $destination,
+            id: Uuid::generate()->value(),
+            userId: self::normalizeUserId($userId),
+            requesterName: self::normalizeRequesterName($requesterName),
+            destination: self::normalizeDestination($destination),
             period: $period,
             status: TravelOrderStatus::Solicitado,
         );
     }
 
     public static function reconstitute(
-        TravelOrderId $id,
-        UserId $userId,
-        RequesterName $requesterName,
-        Destination $destination,
+        string $id,
+        int $userId,
+        string $requesterName,
+        string $destination,
         TravelPeriod $period,
         TravelOrderStatus $status,
     ): self {
-        return new self($id, $userId, $requesterName, $destination, $period, $status);
+        return new self(
+            id: self::normalizeId($id),
+            userId: self::normalizeUserId($userId),
+            requesterName: self::normalizeRequesterName($requesterName),
+            destination: self::normalizeDestination($destination),
+            period: $period,
+            status: $status,
+        );
     }
 
     /**
@@ -63,7 +68,7 @@ final class TravelOrder
      */
     public function approve(): void
     {
-        if (! $this->status->isSolicitado()) {
+        if (! $this->status->canTransitionTo(TravelOrderStatus::Aprovado)) {
             throw new InvalidTravelOrderStateException('Only requested orders can be approved.');
         }
 
@@ -76,7 +81,7 @@ final class TravelOrder
      */
     public function cancel(): void
     {
-        if (! $this->status->isSolicitado()) {
+        if (! $this->status->canTransitionTo(TravelOrderStatus::Cancelado)) {
             throw new InvalidTravelOrderStateException('Only requested orders can be cancelled.');
         }
 
@@ -85,8 +90,6 @@ final class TravelOrder
     }
 
     /**
-     * Drena e retorna os eventos de domínio acumulados desde a última chamada.
-     *
      * @return list<TravelOrderApproved|TravelOrderCancelled>
      */
     public function pullDomainEvents(): array
@@ -97,22 +100,22 @@ final class TravelOrder
         return $events;
     }
 
-    public function id(): TravelOrderId
+    public function id(): string
     {
         return $this->id;
     }
 
-    public function userId(): UserId
+    public function userId(): int
     {
         return $this->userId;
     }
 
-    public function requesterName(): RequesterName
+    public function requesterName(): string
     {
         return $this->requesterName;
     }
 
-    public function destination(): Destination
+    public function destination(): string
     {
         return $this->destination;
     }
@@ -127,12 +130,56 @@ final class TravelOrder
         return $this->status;
     }
 
-    public function belongsTo(UserId $userId): bool
+    public function belongsTo(int $userId): bool
     {
-        return $this->userId->equals($userId);
+        return $this->userId === $userId;
     }
 
-    private function record(object $event): void
+    private static function normalizeId(string $id): string
+    {
+        return Uuid::fromString($id)->value();
+    }
+
+    private static function normalizeUserId(int $userId): int
+    {
+        if ($userId <= 0) {
+            throw new InvalidArgumentException('User ID must be greater than zero.');
+        }
+
+        return $userId;
+    }
+
+    private static function normalizeRequesterName(string $requesterName): string
+    {
+        $trimmed = trim($requesterName);
+
+        if ($trimmed === '') {
+            throw new InvalidArgumentException('Requester name cannot be empty.');
+        }
+
+        if (strlen($trimmed) > 255) {
+            throw new InvalidArgumentException('Requester name cannot exceed 255 characters.');
+        }
+
+        return $trimmed;
+    }
+
+    private static function normalizeDestination(string $destination): string
+    {
+        $trimmed = trim($destination);
+
+        if ($trimmed === '') {
+            throw new InvalidArgumentException('Destination cannot be empty.');
+        }
+
+        if (strlen($trimmed) > 255) {
+            throw new InvalidArgumentException('Destination cannot exceed 255 characters.');
+        }
+
+        return $trimmed;
+    }
+
+    private function record(TravelOrderApproved|TravelOrderCancelled $event): void
     {
         $this->domainEvents[] = $event;
     }

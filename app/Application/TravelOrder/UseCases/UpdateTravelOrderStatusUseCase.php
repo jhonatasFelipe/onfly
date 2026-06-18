@@ -9,9 +9,7 @@ use App\Application\TravelOrder\DTOs\UpdateTravelOrderStatusInput;
 use App\Application\TravelOrder\DTOs\UpdateTravelOrderStatusOutput;
 use App\Domain\TravelOrder\Exceptions\InvalidTravelOrderStateException;
 use App\Domain\TravelOrder\Exceptions\TravelOrderNotFoundException;
-use App\Domain\TravelOrder\Exceptions\UnauthorizedTravelOrderAccessException;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
-use App\Domain\TravelOrder\ValueObjects\TravelOrderId;
 use App\Domain\TravelOrder\ValueObjects\TravelOrderStatus;
 
 /**
@@ -26,12 +24,11 @@ final class UpdateTravelOrderStatusUseCase
 
     /**
      * @throws TravelOrderNotFoundException
-     * @throws UnauthorizedTravelOrderAccessException
      * @throws InvalidTravelOrderStateException
      */
     public function execute(UpdateTravelOrderStatusInput $input): UpdateTravelOrderStatusOutput
     {
-        $order = $this->orders->findById(TravelOrderId::fromString($input->orderId))
+        $order = $this->orders->findById($input->orderId)
             ?? throw new TravelOrderNotFoundException('Travel order not found.');
 
         $targetStatus = TravelOrderStatus::fromString($input->status);
@@ -39,7 +36,7 @@ final class UpdateTravelOrderStatusUseCase
         match ($targetStatus) {
             TravelOrderStatus::Aprovado => $order->approve(),
             TravelOrderStatus::Cancelado => $order->cancel(),
-            TravelOrderStatus::Solicitado => throw new UnauthorizedTravelOrderAccessException('Cannot revert to requested status.'),
+            TravelOrderStatus::Solicitado => throw new InvalidTravelOrderStateException('Cannot revert to requested status.'),
         };
 
         $this->orders->save($order);

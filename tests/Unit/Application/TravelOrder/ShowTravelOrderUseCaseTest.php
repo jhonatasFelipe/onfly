@@ -10,7 +10,6 @@ use App\Application\TravelOrder\UseCases\ShowTravelOrderUseCase;
 use App\Domain\TravelOrder\Exceptions\TravelOrderNotFoundException;
 use App\Domain\TravelOrder\Exceptions\UnauthorizedTravelOrderAccessException;
 use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
-use App\Domain\TravelOrder\ValueObjects\UserId;
 use Mockery;
 use Tests\Unit\Domain\TravelOrder\Support\MakesTravelOrder;
 use Tests\Unit\UnitTestCase;
@@ -43,14 +42,14 @@ final class ShowTravelOrderUseCaseTest extends UnitTestCase
 
         $orders->shouldReceive('findById')->once()->andReturn($order);
         $user->shouldReceive('isAdmin')->once()->andReturn(false);
-        $user->shouldReceive('userId')->once()->andReturn(UserId::fromInt(99));
+        $user->shouldReceive('userId')->once()->andReturn(99);
 
         $useCase = new ShowTravelOrderUseCase($orders, $user);
 
         $this->expectException(UnauthorizedTravelOrderAccessException::class);
         $this->expectExceptionMessage('You cannot view this travel order.');
 
-        $useCase->execute(new ShowTravelOrderInput($order->id()->value()));
+        $useCase->execute(new ShowTravelOrderInput($order->id()));
     }
 
     public function test_owner_can_view_own_order(): void
@@ -61,13 +60,13 @@ final class ShowTravelOrderUseCaseTest extends UnitTestCase
 
         $orders->shouldReceive('findById')->once()->andReturn($order);
         $user->shouldReceive('isAdmin')->once()->andReturn(false);
-        $user->shouldReceive('userId')->once()->andReturn(UserId::fromInt(1));
+        $user->shouldReceive('userId')->once()->andReturn(1);
 
         $useCase = new ShowTravelOrderUseCase($orders, $user);
 
-        $output = $useCase->execute(new ShowTravelOrderInput($order->id()->value()));
-        
-        $this->assertTrue($output->order->id()->equals($order->id()));
+        $output = $useCase->execute(new ShowTravelOrderInput($order->id()));
+
+        $this->assertSame($order->id(), $output->order->id());
     }
 
     public function test_admin_can_view_any_order(): void
@@ -82,8 +81,8 @@ final class ShowTravelOrderUseCaseTest extends UnitTestCase
 
         $useCase = new ShowTravelOrderUseCase($orders, $user);
 
-        $output = $useCase->execute(new ShowTravelOrderInput($order->id()->value()));
+        $output = $useCase->execute(new ShowTravelOrderInput($order->id()));
 
-        $this->assertTrue($output->order->id()->equals($order->id()));
+        $this->assertSame($order->id(), $output->order->id());
     }
 }

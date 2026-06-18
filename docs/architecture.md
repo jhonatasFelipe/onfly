@@ -2,6 +2,8 @@
 
 Este documento descreve a arquitetura do projeto Onfly Travel Orders API.
 
+> Para visualizar os diagramas Mermaid neste arquivo, instale a extensão [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) e abra o preview do Markdown (`Ctrl+Shift+V`). Veja também [README.md](README.md).
+
 ## Princípio fundamental
 
 O projeto segue **Clean Architecture** (Robert C. Martin) com influências de **DDD**. A regra de dependência é clara: **código interno nunca depende de código externo**.
@@ -55,7 +57,26 @@ flowchart TB
 
 ## Bounded contexts
 
-O projeto possui dois contextos principais:
+O projeto possui dois contextos principais. O diagrama resume como eles se relacionam nas camadas; detalhes do modelo em [domain.md](domain.md).
+
+```mermaid
+flowchart LR
+    subgraph domain [Domain Layer]
+        TravelOrderBC[TravelOrder BC]
+        SharedKernel[Shared Kernel]
+    end
+    subgraph app [Application + Infrastructure]
+        AuthCtx[Auth sem entidade]
+        TravelOrderApp[Use Cases + Ports]
+    end
+    TravelOrderBC --> SharedKernel
+    TravelOrderApp --> TravelOrderBC
+    AuthCtx -.->|"DTOs + Ports"| TravelOrderApp
+```
+
+- **TravelOrder** — domínio rico: aggregate, eventos, repositório
+- **Shared** — `Uuid`, `Pagination` (kernel compartilhado)
+- **Auth** — fora de `app/Domain/`; integração pragmática via ports e DTOs
 
 ### TravelOrder (domínio rico)
 

@@ -2,6 +2,89 @@
 
 Este documento descreve as regras de negócio, estados, autorização e eventos do bounded context **TravelOrder**.
 
+> Para visualizar os diagramas abaixo no editor, use o preview do Markdown com a extensão [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid). Detalhes no [índice da documentação](README.md).
+
+## Visão do modelo de domínio
+
+O bounded context **TravelOrder** concentra quase toda a lógica de negócio em `app/Domain/`. O diagrama abaixo mostra como os componentes se organizam e se relacionam.
+
+### Mapa de componentes
+
+```mermaid
+flowchart TB
+    subgraph travelOrderBC [TravelOrder]
+        Entity[TravelOrder Entity]
+        VO["TravelPeriod e TravelOrderStatus"]
+        Events[Domain Events]
+        Repo[TravelOrderRepositoryInterface]
+        Criteria[ListTravelOrdersCriteria]
+        Collections[TravelOrderCollection + PaginatedTravelOrders]
+        Exceptions["4 exceções de domínio"]
+    end
+    subgraph shared [Shared]
+        Uuid[Uuid]
+        Pagination[Pagination]
+    end
+    Entity --> VO
+    Entity --> Events
+    Criteria --> Pagination
+    Criteria --> VO
+    Collections --> Entity
+    Repo --> Entity
+    Entity --> Uuid
+```
+
+### Diagrama do aggregate
+
+O aggregate root `TravelOrder` é o único ponto de entrada para mudanças de estado. Campos como `id`, `userId`, `requesterName` e `destination` são **atributos validados** dentro da entidade; `TravelPeriod` e `TravelOrderStatus` são value objects explícitos.
+
+```mermaid
+classDiagram
+    class TravelOrder {
+        -string id
+        -int userId
+        -string requesterName
+        -string destination
+        -TravelPeriod period
+        -TravelOrderStatus status
+        +create()
+        +reconstitute()
+        +approve()
+        +cancel()
+        +belongsTo()
+        +pullDomainEvents()
+    }
+    class TravelPeriod {
+        +DateTimeImmutable departure
+        +DateTimeImmutable returnDate
+        +fromStrings()
+    }
+    class TravelOrderStatus {
+        <<enumeration>>
+        Solicitado
+        Aprovado
+        Cancelado
+        +canTransitionTo()
+    }
+    class TravelOrderApproved {
+        +string orderId
+        +int userId
+    }
+    class TravelOrderCancelled {
+        +string orderId
+        +int userId
+    }
+    class Uuid {
+        +generate()
+        +fromString()
+    }
+    TravelOrder *-- TravelPeriod
+    TravelOrder *-- TravelOrderStatus
+    TravelOrder ..> TravelOrderApproved : approve
+    TravelOrder ..> TravelOrderCancelled : cancel
+    TravelOrder ..> Uuid : create
+```
+
 ## Aggregate: TravelOrder
 
 O aggregate root `TravelOrder` encapsula todo o ciclo de vida de um pedido de viagem.
@@ -10,14 +93,14 @@ O aggregate root `TravelOrder` encapsula todo o ciclo de vida de um pedido de vi
 
 ### Dados do pedido
 
-| Campo | Value Object | Descrição |
-|-------|--------------|-----------|
-| ID | `TravelOrderId` | UUID gerado na criação |
-| Solicitante | `UserId` | ID do usuário autenticado |
-| Nome | `RequesterName` | Nome do solicitante |
-| Destino | `Destination` | Destino da viagem |
-| Período | `TravelPeriod` | Datas de ida e volta |
-| Status | `TravelOrderStatus` | Estado atual do pedido |
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| ID | `string` (UUID) | Gerado na criação via `Uuid::generate()`; validado em `normalizeId()` |
+| Solicitante | `int` | ID do usuário autenticado; validado em `normalizeUserId()` |
+| Nome | `string` | Nome do solicitante; validado em `normalizeRequesterName()` |
+| Destino | `string` | Destino da viagem; validado em `normalizeDestination()` |
+| Período | `TravelPeriod` | Value object — datas de ida e volta |
+| Status | `TravelOrderStatus` | Value object (enum) — estado atual do pedido |
 
 ### Criação
 
@@ -32,7 +115,25 @@ TravelOrder::create(
 );
 ```
 
-O ID é gerado automaticamente via `TravelOrderId::generate()`.
+O ID é gerado automaticamente via `Uuid::generate()` dentro de `TravelOrder::create()`.
+
+### Fluxo de criação
+
+A criação de um pedido **não** dispara eventos de domínio — apenas `approve()` e `cancel()` registram eventos.
+
+```mermaid
+sequenceDiagram
+    participant UC as CreateTravelOrderUseCase
+    participant Entity as TravelOrder
+    participant Period as TravelPeriod
+    participant Repo as TravelOrderRepositoryInterface
+
+    UC->>Period: fromStrings(departure, returnDate)
+    UC->>Entity: create(userId, requesterName, destination, period)
+    Entity-->>Entity: status = solicitado, id = Uuid::generate()
+    UC->>Repo: save(order)
+    Note over Entity: Nenhum domain event registrado
+```
 
 ## Máquina de estados
 
@@ -55,14 +156,14 @@ stateDiagram-v2
 
 - Apenas pedidos em status `solicitado` podem ser aprovados ou cancelados
 - Tentativa de transição inválida lança `InvalidTravelOrderStateException` → HTTP **409**
-- Não é possível reverter para `solicitado` → HTTP **403**
+- Estados finais (`aprovado`, `cancelado`) não permitem novas transições
 
 A lógica está no aggregate:
 
 ```php
 public function approve(): void
 {
-    if (! $this->status->isSolicitado()) {
+    if (! $this->status->canTransitionTo(TravelOrderStatus::Aprovado)) {
         throw new InvalidTravelOrderStateException('Only requested orders can be approved.');
     }
     $this->status = TravelOrderStatus::Aprovado;
@@ -83,17 +184,15 @@ if ($this->return < $this->departure) {
 }
 ```
 
-### Value Objects
+### Value Objects e atributos validados
 
-Cada value object valida seus invariantes no construtor:
-
-| Value Object | Validação |
-|--------------|-----------|
-| `Destination` | Não vazio, tamanho máximo |
-| `RequesterName` | Não vazio, tamanho máximo |
-| `TravelOrderId` | UUID válido |
-| `UserId` | ID numérico positivo |
-| `TravelOrderStatus` | Valor do backed enum |
+| Conceito | Onde vive | Validação |
+|----------|-----------|-----------|
+| `TravelPeriod` | `Domain/TravelOrder/ValueObjects/` | Volta ≥ ida no construtor |
+| `TravelOrderStatus` | `Domain/TravelOrder/ValueObjects/` | Backed enum; `canTransitionTo()` define transições |
+| `Uuid` | `Domain/Shared/ValueObjects/` | UUID válido (Ramsey) |
+| `Pagination` | `Domain/Shared/ValueObjects/` | `page` e `perPage` positivos |
+| Destino, nome, userId, id | Métodos `normalize*()` em `TravelOrder` | Não vazio, tamanho máximo, ID positivo, UUID válido |
 
 Validações de **formato de input** (tipos, campos obrigatórios) ficam nos Form Requests da camada Http. Validações de **regra de negócio** ficam no Domain.
 
@@ -135,8 +234,8 @@ Eventos são registrados dentro do aggregate e despachados pelo use case após p
 
 | Evento | Disparado quando | Dados |
 |--------|------------------|-------|
-| `TravelOrderApproved` | `$order->approve()` | `TravelOrderId`, `UserId` |
-| `TravelOrderCancelled` | `$order->cancel()` | `TravelOrderId`, `UserId` |
+| `TravelOrderApproved` | `$order->approve()` | `orderId` (string UUID), `userId` (int) |
+| `TravelOrderCancelled` | `$order->cancel()` | `orderId` (string UUID), `userId` (int) |
 
 ### Fluxo de side effects
 
@@ -173,7 +272,7 @@ A listagem de pedidos aceita filtros via `ListTravelOrdersCriteria`:
 | Filtro | Tipo | Descrição |
 |--------|------|-----------|
 | `pagination` | `Pagination` | Página e itens por página (`page`, `per_page` na API) |
-| `userId` | `UserId` | Filtrar por solicitante (aplicado automaticamente para não-admin) |
+| `userId` | `int` | Filtrar por solicitante (aplicado automaticamente para não-admin) |
 | `status` | `TravelOrderStatus` | Filtrar por status |
 | `destination` | `string` | Busca parcial por destino |
 | `createdFrom` / `createdTo` | `string` (data) | Intervalo de criação |
@@ -185,12 +284,40 @@ A listagem de pedidos aceita filtros via `ListTravelOrdersCriteria`:
 
 ## Exceções de domínio
 
+O diagrama abaixo liga cada ação de domínio à exceção correspondente e ao status HTTP retornado pela API.
+
+```mermaid
+flowchart LR
+    subgraph aggregate [TravelOrder]
+        create[create / reconstitute]
+        approve[approve]
+        cancel[cancel]
+        period[TravelPeriod]
+    end
+    subgraph useCases [Use Cases]
+        show[ShowTravelOrderUseCase]
+        list[ListTravelOrdersUseCase]
+    end
+    create -->|atributo inválido| invalidArg[InvalidArgumentException]
+    period -->|volta antes da ida| invalidPeriod[InvalidTravelPeriodException]
+    approve -->|status final| invalidState[InvalidTravelOrderStateException]
+    cancel -->|status final| invalidState
+    show -->|pedido alheio| unauthorized[UnauthorizedTravelOrderAccessException]
+    show -->|não encontrado| notFound[TravelOrderNotFoundException]
+    invalidArg --> http422[HTTP 422]
+    invalidPeriod --> http422
+    invalidState --> http409[HTTP 409]
+    unauthorized --> http403[HTTP 403]
+    notFound --> http404[HTTP 404]
+```
+
 | Exceção | Quando | HTTP |
 |---------|--------|------|
 | `TravelOrderNotFoundException` | Pedido não existe | 404 |
 | `UnauthorizedTravelOrderAccessException` | Acesso a pedido alheio ou ação não permitida | 403 |
 | `InvalidTravelOrderStateException` | Transição de status inválida | 409 |
 | `InvalidTravelPeriodException` | Data de volta anterior à ida | 422 |
+| `InvalidArgumentException` | Atributo inválido na normalização (`userId`, nome, destino, id) | 422 |
 
 ## Casos de uso e responsabilidades
 

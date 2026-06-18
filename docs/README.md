@@ -2,6 +2,8 @@
 
 Bem-vindo à documentação técnica do projeto. Este índice organiza os guias por tema.
 
+> **Diagramas Mermaid:** vários documentos usam diagramas em blocos ` ```mermaid ` . No Cursor/VS Code, o preview padrão do Markdown **não** os renderiza — instale a extensão [**Markdown Preview Mermaid Support**](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) (`bierner.markdown-mermaid`) e abra o preview com `Ctrl+Shift+V` (ou **Markdown: Open Preview to the Side**). O projeto já recomenda essa extensão em `.vscode/extensions.json`. No GitHub, os diagramas são exibidos automaticamente.
+
 ## Visão geral do sistema
 
 A Onfly é uma API REST para **gestão de pedidos de viagem corporativa**. Usuários autenticados criam pedidos de viagem; administradores aprovam ou cancelam. O sistema notifica o solicitante por e-mail e canal in-app quando o status muda.

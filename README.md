@@ -142,6 +142,13 @@ Criadas automaticamente pelo seeder (`make setup`):
 | `RATE_LIMIT_WEB` | `60` | rotas web gerais |
 | `RATE_LIMIT_DOCS` | `30` | `/docs/api` |
 
+### Pedidos de viagem (paginação)
+
+| Variável | Padrão | Descrição |
+|----------|--------|-----------|
+| `TRAVEL_ORDERS_PER_PAGE` | `15` | Itens por página na listagem (`per_page` padrão) |
+| `TRAVEL_ORDERS_MAX_PER_PAGE` | `100` | Máximo permitido para `per_page` |
+
 ## Documentação da API (Scramble)
 
 A documentação interativa OpenAPI é gerada automaticamente pelo [Scramble](https://scramble.dedoc.co):
@@ -189,11 +196,54 @@ Na UI do Scramble, use o botão **Authorize** e informe o token para testar endp
 | POST | `/api/v1/auth/login` | Público |
 | POST | `/api/v1/auth/logout` | Sanctum |
 | POST | `/api/v1/travel-orders` | Sanctum |
-| GET | `/api/v1/travel-orders` | Sanctum |
+| GET | `/api/v1/travel-orders` | Sanctum (paginado) |
 | GET | `/api/v1/travel-orders/{id}` | Sanctum |
-| PATCH | `/api/v1/travel-orders/{id}/status` | Sanctum (admin para aprovar/cancelar) |
+| PATCH | `/api/v1/travel-orders/{travelOrder}/status` | Sanctum (admin para aprovar/cancelar) |
 
 Consulte `/docs/api` para schemas completos, filtros e códigos de resposta. Para regras de negócio (status, permissões, eventos), veja [`docs/domain.md`](docs/domain.md).
+
+### Listagem paginada
+
+A rota `GET /api/v1/travel-orders` retorna resultados paginados:
+
+| Query param | Padrão | Descrição |
+|-------------|--------|-----------|
+| `page` | `1` | Página atual |
+| `per_page` | `15` (`TRAVEL_ORDERS_PER_PAGE`) | Itens por página (máx. `TRAVEL_ORDERS_MAX_PER_PAGE`) |
+| `status` | — | Filtrar por `solicitado`, `aprovado` ou `cancelado` |
+| `destination` | — | Busca parcial por destino |
+| `created_from` / `created_to` | — | Intervalo de datas de criação |
+| `departure_from` / `departure_to` | — | Intervalo de datas de partida |
+
+```bash
+curl "http://localhost:8080/api/v1/travel-orders?page=1&per_page=10&status=solicitado" \
+  -H "Authorization: Bearer {token}"
+```
+
+Resposta:
+
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "requester_name": "Admin User",
+      "destination": "Salvador",
+      "departure_date": "2026-07-01",
+      "return_date": "2026-07-10",
+      "status": "solicitado"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 10,
+    "total": 42,
+    "last_page": 5
+  }
+}
+```
+
+Usuários comuns veem apenas os próprios pedidos; administradores veem todos.
 
 ### Autenticação na API
 
@@ -225,6 +275,27 @@ Respostas `429` retornam: `{"message": "Muitas tentativas. Tente novamente mais 
 ```bash
 make artisan cmd="test"
 ```
+
+Com verificação de cobertura mínima de 100% (requer PCOV ou Xdebug):
+
+```bash
+make artisan cmd="test --coverage --min=100"
+```
+
+Ou via Composer:
+
+```bash
+make composer cmd="test:coverage"
+```
+
+### CI (GitHub Actions)
+
+Em **pull requests para `main`**, o workflow [`.github/workflows/tests.yml`](.github/workflows/tests.yml) executa automaticamente:
+
+1. `composer install`
+2. `php artisan test --coverage --min=100`
+
+O merge só deve ocorrer com o check verde e cobertura em 100% sobre o código incluído em `phpunit.xml`.
 
 Ou dentro do container:
 

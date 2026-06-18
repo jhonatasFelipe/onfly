@@ -209,6 +209,7 @@ $this->app->bind(NovaInterface::class, NovaImplementacao::class);
 - [ ] Factories em vez de dados hardcoded
 - [ ] Feature test para endpoints HTTP novos
 - [ ] Casos de erro e autorização negada cobertos
+- [ ] `php artisan test --coverage --min=100` passa localmente (ou aguardar CI no PR para `main`)
 
 ## Padrão de commits
 
@@ -267,5 +268,5 @@ Consulte essas regras para decisões arquiteturais mais detalhadas.
 1. Crie uma branch a partir da main
 2. Implemente seguindo as camadas (Domain → Application → Infrastructure → Http)
 3. Escreva testes para cada camada
-4. Execute `make artisan cmd="test"` antes de abrir o PR
-5. Abra o PR com descrição clara do que mudou e por quê
+4. Execute `make artisan cmd="test --coverage --min=100"` antes de abrir o PR (o CI exige 100% de cobertura)
+5. Abra o PR para `main` com descrição clara do que mudou e por quê — o workflow de testes roda automaticamente

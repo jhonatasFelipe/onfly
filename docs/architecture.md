@@ -118,7 +118,8 @@ Interfaces para infraestrutura externa:
 | `EventDispatcherPort` | Dispatch de eventos de domínio |
 | `NotificationPort` | Envio de notificações |
 | `TravelOrderPersistenceFacadeInterface` | Persistência com tradução Eloquent ↔ Domain |
-| `TravelOrderListQueryPort` | Consultas de listagem com filtros |
+| `TravelOrderEloquentTranslatorInterface` | Tradução entre registro Eloquent e entidade de domínio |
+| `TravelOrderListQueryPort` | Consultas paginadas de listagem com filtros |
 
 #### Listeners
 
@@ -149,19 +150,20 @@ Adapta HTTP para use cases.
 |------------|--------|
 | Controllers | Single-action (`__invoke`) — finos, sem lógica de negócio |
 | Form Requests | Validação de input (`StoreTravelOrderRequest`, etc.) |
-| API Resources | Transformação de output (`TravelOrderResource`, `UserResource`) |
+| API Resources | Transformação de output (`TravelOrderResource`, `PaginatedTravelOrderResource`, `UserResource`) |
 | Middleware | `EnsureUserIsAdmin`, `EnsureApiDocsAccess` |
 | OpenApi | Schemas e extensões Scramble |
 
 ## Fluxo de requisição: aprovar pedido
 
-Exemplo completo de `PATCH /api/v1/travel-orders/{id}/status`:
+Exemplo completo de `PATCH /api/v1/travel-orders/{travelOrder}/status`:
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant Controller as UpdateTravelOrderStatusController
     participant Request as UpdateTravelOrderStatusRequest
+    participant Facade as TravelOrderPersistenceFacade
     participant UseCase as UpdateTravelOrderStatusUseCase
     participant Repo as EloquentTravelOrderRepository
     participant Entity as TravelOrder
@@ -170,11 +172,12 @@ sequenceDiagram
     participant Notif as NotificationPort
 
     Client->>Controller: PATCH /status {status: aprovado}
-    Controller->>Request: authorize() via Policy
+    Note over Controller: Route model binding resolve TravelOrderModel (1 query)
+    Controller->>Controller: authorize via Policy
     Request-->>Controller: validated input
-    Controller->>UseCase: execute(input)
-    UseCase->>Repo: findById(id)
-    Repo-->>UseCase: TravelOrder entity
+    Controller->>Facade: toDomain(model attributes)
+    Facade-->>Controller: TravelOrder entity
+    Controller->>UseCase: execute(order, status)
     UseCase->>Entity: approve()
     Entity-->>Entity: status = aprovado, record event
     UseCase->>Repo: save(order)
@@ -183,6 +186,33 @@ sequenceDiagram
     Listener->>Notif: send notification
     UseCase-->>Controller: output
     Controller-->>Client: JSON 200
+```
+
+## Listagem paginada
+
+A listagem de pedidos usa **query port** separado do repositório de escrita:
+
+| Camada | Componente | Responsabilidade |
+|--------|------------|------------------|
+| Domain | `Pagination`, `PaginatedTravelOrders`, `ListTravelOrdersCriteria` | Modelo de paginação e critérios |
+| Application | `ListTravelOrdersUseCase`, `TravelOrderListQueryPort` | Orquestra escopo por papel e delega consulta |
+| Infrastructure | `EloquentTravelOrderListQueryAdapter` | `count()` + `offset`/`limit`, mapeamento para domínio |
+| Presentation | `ListTravelOrdersRequest`, `PaginatedTravelOrderResource` | Valida `page`/`per_page`, formata JSON com `meta` |
+
+Configuração em `config/travel-orders.php` (`TRAVEL_ORDERS_PER_PAGE`, `TRAVEL_ORDERS_MAX_PER_PAGE`).
+
+Resposta HTTP:
+
+```json
+{
+  "data": [ /* TravelOrderResource[] */ ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 42,
+    "last_page": 3
+  }
+}
 ```
 
 ## Injeção de dependências
@@ -198,9 +228,9 @@ Bindings registrados em `RepositoryServiceProvider`:
 | `ApiTokenPort` | `SanctumApiTokenAdapter` |
 | `SessionAuthenticationPort` | `LaravelSessionAuthenticationAdapter` |
 | `TravelOrderPersistenceFacadeInterface` | `TravelOrderPersistenceFacade` |
+| `TravelOrderEloquentTranslatorInterface` | `TravelOrderEloquentTranslator` |
 | `NotificationPort` | `LaravelNotificationAdapter` |
 | `EventDispatcherPort` | `LaravelEventDispatcherAdapter` |
-| `TravelOrderEloquentTranslatorInterface` | `TravelOrderEloquentTranslator` |
 | `TravelOrderListQueryPort` | `EloquentTravelOrderListQueryAdapter` |
 
 Event listeners registrados em `EventServiceProvider`.
@@ -221,7 +251,7 @@ Event listeners registrados em `EventServiceProvider`.
 | `TravelOrderPolicy` | `approve()`, `cancel()` | Apenas `is_admin = true` |
 | Use case ownership | `ShowTravelOrderUseCase` | Usuário vê só os próprios; admin vê todos |
 | Use case escopo | `ListTravelOrdersUseCase` | Admin lista todos; user filtrado por `userId` |
-| Form Request | `UpdateTravelOrderStatusRequest::authorize()` | Delega à policy antes do use case |
+| Form Request | `UpdateTravelOrderStatusRequest` | Valida `status`; autorização via Policy no controller |
 
 ## Tratamento de exceções
 
@@ -260,10 +290,11 @@ Gerada automaticamente pelo **Scramble** (`dedoc/scramble`):
 | Use Case | Um caso de uso por ação de negócio |
 | DTOs tipados | Input/Output por use case |
 | Domain Events + Listeners | Aprovação/cancelamento → notificação |
-| Policy-based authorization | `TravelOrderPolicy` + Form Request |
+| Policy-based authorization | `TravelOrderPolicy` + `$this->authorize()` no controller |
 | Single-action controllers | Todos os controllers API usam `__invoke` |
 | Criteria object | `ListTravelOrdersCriteria` para queries de listagem |
-| Mapper/Facade de persistência | `TravelOrderPersistenceFacade` |
+| Query port (CQRS leve) | Leitura paginada via `TravelOrderListQueryPort` |
+| Mapper/Facade de persistência | `TravelOrderPersistenceFacade` + `TravelOrderEloquentTranslator` |
 
 ## Estrutura de rotas
 
@@ -275,9 +306,9 @@ Gerada automaticamente pelo **Scramble** (`dedoc/scramble`):
 │   └── POST logout               [auth:sanctum]
 └── [auth:sanctum]
     ├── POST   travel-orders
-    ├── GET    travel-orders
+    ├── GET    travel-orders              ?page=&per_page=&filtros
     ├── GET    travel-orders/{id}
-    └── PATCH  travel-orders/{id}/status
+    └── PATCH  travel-orders/{travelOrder}/status
 
 Web:
 ├── GET|POST /admin/login         [guest, throttle:web-login]

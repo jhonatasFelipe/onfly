@@ -172,6 +172,7 @@ A listagem de pedidos aceita filtros via `ListTravelOrdersCriteria`:
 
 | Filtro | Tipo | Descrição |
 |--------|------|-----------|
+| `pagination` | `Pagination` | Página e itens por página (`page`, `per_page` na API) |
 | `userId` | `UserId` | Filtrar por solicitante (aplicado automaticamente para não-admin) |
 | `status` | `TravelOrderStatus` | Filtrar por status |
 | `destination` | `string` | Busca parcial por destino |

@@ -29,9 +29,18 @@ php artisan test --testsuite=Feature
 php artisan test tests/Unit/Domain/TravelOrder/TravelOrderTest.php
 php artisan test --filter=test_admin_can_approve_order
 
-# Com cobertura (requer Xdebug ou PCOV)
-php artisan test --coverage
+# Com cobertura mínima de 100% (requer Xdebug ou PCOV)
+php artisan test --coverage --min=100
 ```
+
+## CI (GitHub Actions)
+
+Pull requests para a branch `main` disparam o workflow [`.github/workflows/tests.yml`](../.github/workflows/tests.yml), que:
+
+1. Instala dependências com Composer (PHP 8.4 + PCOV)
+2. Executa `php artisan test --coverage --min=100`
+
+O PR só deve ser mergeado com esse check verde. A cobertura considera os diretórios definidos em `phpunit.xml` (`Domain`, `Application`, `Infrastructure`, `Http`, `Notifications`), excluindo interfaces de ports/repositórios e providers.
 
 ## Configuração (`phpunit.xml`)
 
@@ -138,7 +147,6 @@ Configurada em `phpunit.xml`:
 **Excluídas:**
 - Interfaces de repositório (`Domain/TravelOrder/Repositories`)
 - Ports (`Application/Ports`)
-- Contracts (`Infrastructure/Contracts`)
 - `Http/Controllers/Controller.php`
 - Providers (`app/Providers`)
 

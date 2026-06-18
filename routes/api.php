@@ -22,7 +22,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         Route::post('travel-orders', StoreTravelOrderController::class);
         Route::get('travel-orders', ListTravelOrdersController::class);
         Route::get('travel-orders/{id}', ShowTravelOrderController::class)->whereUuid('id');
-        Route::patch('travel-orders/{id}/status', UpdateTravelOrderStatusController::class)
-            ->whereUuid('id');
+        Route::patch('travel-orders/{travelOrder}/status', UpdateTravelOrderStatusController::class)
+            ->whereUuid('travelOrder');
     });
 });

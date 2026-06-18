@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Application\TravelOrder;
 
 use App\Application\Ports\AuthenticatedUserPort;
+use App\Application\Ports\TravelOrderListQueryPort;
 use App\Application\TravelOrder\DTOs\ListTravelOrdersInput;
 use App\Application\TravelOrder\UseCases\ListTravelOrdersUseCase;
+use App\Domain\Shared\ValueObjects\Pagination;
+use App\Domain\TravelOrder\Collections\PaginatedTravelOrders;
 use App\Domain\TravelOrder\Collections\TravelOrderCollection;
 use App\Domain\TravelOrder\Criteria\ListTravelOrdersCriteria;
-use App\Domain\TravelOrder\Repositories\TravelOrderRepositoryInterface;
 use App\Domain\TravelOrder\ValueObjects\TravelOrderStatus;
-use App\Domain\TravelOrder\ValueObjects\UserId;
 use Mockery;
 use Tests\Unit\Domain\TravelOrder\Support\MakesTravelOrder;
 use Tests\Unit\UnitTestCase;
@@ -22,20 +23,28 @@ final class ListTravelOrdersUseCaseTest extends UnitTestCase
 
     public function test_admin_lists_all_orders_without_user_filter(): void
     {
-        $orders = Mockery::mock(TravelOrderRepositoryInterface::class);
+        $listQuery = Mockery::mock(TravelOrderListQueryPort::class);
         $user = Mockery::mock(AuthenticatedUserPort::class);
-        $collection = TravelOrderCollection::fromArray($this->createTravelOrder());
+        $page = new PaginatedTravelOrders(
+            items: TravelOrderCollection::fromArray($this->createTravelOrder()),
+            total: 1,
+            pagination: new Pagination(1, 15),
+        );
 
         $user->shouldReceive('isAdmin')->once()->andReturn(true);
-        $orders->shouldReceive('list')
+        $listQuery->shouldReceive('paginate')
             ->once()
             ->with(Mockery::on(fn (ListTravelOrdersCriteria $criteria) => $criteria->userId === null
-                && $criteria->status === null))
-            ->andReturn($collection);
+                && $criteria->status === null
+                && $criteria->pagination->page === 1
+                && $criteria->pagination->perPage === 15))
+            ->andReturn($page);
 
-        $useCase = new ListTravelOrdersUseCase($orders, $user);
+        $useCase = new ListTravelOrdersUseCase($listQuery, $user);
 
         $output = $useCase->execute(new ListTravelOrdersInput(
+            page: 1,
+            perPage: 15,
             status: null,
             destination: null,
             createdFrom: null,
@@ -44,25 +53,31 @@ final class ListTravelOrdersUseCaseTest extends UnitTestCase
             departureTo: null,
         ));
 
-        $this->assertCount(1, $output->orders);
+        $this->assertCount(1, $output->page->items);
     }
 
     public function test_regular_user_lists_only_own_orders(): void
     {
-        $orders = Mockery::mock(TravelOrderRepositoryInterface::class);
+        $listQuery = Mockery::mock(TravelOrderListQueryPort::class);
         $user = Mockery::mock(AuthenticatedUserPort::class);
-        $collection = TravelOrderCollection::empty();
+        $page = new PaginatedTravelOrders(
+            items: TravelOrderCollection::empty(),
+            total: 0,
+            pagination: new Pagination(1, 15),
+        );
 
         $user->shouldReceive('isAdmin')->once()->andReturn(false);
-        $user->shouldReceive('userId')->once()->andReturn(UserId::fromInt(5));
-        $orders->shouldReceive('list')
+        $user->shouldReceive('userId')->once()->andReturn(5);
+        $listQuery->shouldReceive('paginate')
             ->once()
-            ->with(Mockery::on(fn (ListTravelOrdersCriteria $criteria) => $criteria->userId?->value() === 5))
-            ->andReturn($collection);
+            ->with(Mockery::on(fn (ListTravelOrdersCriteria $criteria) => $criteria->userId === 5))
+            ->andReturn($page);
 
-        $useCase = new ListTravelOrdersUseCase($orders, $user);
+        $useCase = new ListTravelOrdersUseCase($listQuery, $user);
 
         $output = $useCase->execute(new ListTravelOrdersInput(
+            page: 1,
+            perPage: 15,
             status: null,
             destination: null,
             createdFrom: null,
@@ -71,24 +86,30 @@ final class ListTravelOrdersUseCaseTest extends UnitTestCase
             departureTo: null,
         ));
 
-        $this->assertCount(0, $output->orders);
+        $this->assertCount(0, $output->page->items);
     }
 
-    public function test_passes_status_filter_to_repository(): void
+    public function test_passes_status_filter_to_query_port(): void
     {
-        $orders = Mockery::mock(TravelOrderRepositoryInterface::class);
+        $listQuery = Mockery::mock(TravelOrderListQueryPort::class);
         $user = Mockery::mock(AuthenticatedUserPort::class);
 
         $user->shouldReceive('isAdmin')->once()->andReturn(true);
-        $orders->shouldReceive('list')
+        $listQuery->shouldReceive('paginate')
             ->once()
             ->with(Mockery::on(fn (ListTravelOrdersCriteria $criteria) => $criteria->status === TravelOrderStatus::Aprovado
                 && $criteria->destination === 'Paris'))
-            ->andReturn(TravelOrderCollection::empty());
+            ->andReturn(new PaginatedTravelOrders(
+                items: TravelOrderCollection::empty(),
+                total: 0,
+                pagination: new Pagination(2, 10),
+            ));
 
-        $useCase = new ListTravelOrdersUseCase($orders, $user);
+        $useCase = new ListTravelOrdersUseCase($listQuery, $user);
 
         $output = $useCase->execute(new ListTravelOrdersInput(
+            page: 2,
+            perPage: 10,
             status: 'aprovado',
             destination: 'Paris',
             createdFrom: '2026-01-01',
@@ -97,6 +118,6 @@ final class ListTravelOrdersUseCaseTest extends UnitTestCase
             departureTo: '2026-06-30',
         ));
 
-        $this->assertCount(0, $output->orders);
+        $this->assertCount(0, $output->page->items);
     }
 }

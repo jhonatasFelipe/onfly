@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Valida filtros opcionais para listagem de pedidos de viagem.
+ * Valida filtros opcionais e paginação para listagem de pedidos de viagem.
  */
 final class ListTravelOrdersRequest extends FormRequest
 {
@@ -18,24 +18,30 @@ final class ListTravelOrdersRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'page' => $this->input('page', 1),
+            'per_page' => $this->input('per_page', config()->integer('travel-orders.pagination.default_per_page')),
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function rules(): array
     {
+        $maxPerPage = config()->integer('travel-orders.pagination.max_per_page');
+
         return [
-            // Filtra por status do pedido (solicitado, aprovado ou cancelado).
+            'page' => ['required', 'integer', 'min:1'],
+            'per_page' => ['required', 'integer', 'min:1', 'max:'.$maxPerPage],
             'status' => ['nullable', Rule::enum(TravelOrderStatus::class)],
-            // Filtra por destino (busca parcial).
             'destination' => ['nullable', 'string', 'max:255'],
-            // Data inicial de criação do pedido.
             'created_from' => ['nullable', 'date'],
-            // Data final de criação do pedido.
-            'created_to' => ['nullable', 'date'],
-            // Data inicial de partida.
+            'created_to' => ['nullable', 'date', 'after_or_equal:created_from'],
             'departure_from' => ['nullable', 'date'],
-            // Data final de partida.
-            'departure_to' => ['nullable', 'date'],
+            'departure_to' => ['nullable', 'date', 'after_or_equal:departure_from'],
         ];
     }
 }

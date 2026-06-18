@@ -6,6 +6,8 @@ namespace Tests\Feature\Http\TravelOrder;
 
 use App\Infrastructure\Persistence\Eloquent\TravelOrderModel;
 use App\Infrastructure\Persistence\Eloquent\UserModel;
+use App\Notifications\TravelOrderApprovedNotification;
+use App\Notifications\TravelOrderCancelledNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Sanctum\Sanctum;
@@ -67,7 +69,65 @@ final class TravelOrderApiTest extends TestCase
 
         $this->getJson('/api/v1/travel-orders')
             ->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data')
+            ->assertJsonStructure([
+                'data',
+                'meta' => ['current_page', 'per_page', 'total', 'last_page'],
+            ])
+            ->assertJsonPath('meta.total', 2);
+    }
+
+    public function test_user_can_paginate_travel_orders(): void
+    {
+        $user = UserModel::factory()->create();
+        TravelOrderModel::factory()->count(5)->create(['user_id' => $user->id]);
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/travel-orders?page=2&per_page=2')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.current_page', 2)
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.total', 5)
+            ->assertJsonPath('meta.last_page', 3);
+    }
+
+    public function test_list_rejects_per_page_above_maximum(): void
+    {
+        $user = UserModel::factory()->create();
+        Sanctum::actingAs($user);
+
+        $maxPerPage = (int) config('travel-orders.pagination.max_per_page');
+
+        $this->getJson('/api/v1/travel-orders?per_page='.($maxPerPage + 1))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['per_page']);
+    }
+
+    public function test_list_rejects_invalid_created_date_range(): void
+    {
+        $user = UserModel::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/travel-orders?'.http_build_query([
+            'created_from' => '2026-08-10',
+            'created_to' => '2026-08-01',
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['created_to']);
+    }
+
+    public function test_list_rejects_invalid_departure_date_range(): void
+    {
+        $user = UserModel::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/v1/travel-orders?'.http_build_query([
+            'departure_from' => '2026-09-10',
+            'departure_to' => '2026-09-01',
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['departure_to']);
     }
 
     public function test_user_can_view_own_travel_order(): void
@@ -126,7 +186,7 @@ final class TravelOrderApiTest extends TestCase
             'status' => 'aprovado',
         ])->assertOk()->assertJsonPath('data.status', 'aprovado');
 
-        Notification::assertSentTo($user, \App\Notifications\TravelOrderApprovedNotification::class);
+        Notification::assertSentTo($user, TravelOrderApprovedNotification::class);
     }
 
     public function test_admin_can_cancel_solicitado_order(): void
@@ -143,7 +203,7 @@ final class TravelOrderApiTest extends TestCase
             'status' => 'cancelado',
         ])->assertOk()->assertJsonPath('data.status', 'cancelado');
 
-        Notification::assertSentTo($user, \App\Notifications\TravelOrderCancelledNotification::class);
+        Notification::assertSentTo($user, TravelOrderCancelledNotification::class);
     }
 
     public function test_admin_cannot_cancel_approved_order(): void

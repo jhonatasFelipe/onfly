@@ -35,7 +35,7 @@ final class ApiDocumentationTest extends TestCase
                 'paths' => [
                     '/travel-orders',
                     '/travel-orders/{id}',
-                    '/travel-orders/{id}/status',
+                    '/travel-orders/{travelOrder}/status',
                     '/auth/register',
                     '/auth/login',
                     '/auth/logout',
@@ -106,8 +106,8 @@ final class ApiDocumentationTest extends TestCase
         $this->assertSame('travelOrders.show', $paths['/travel-orders/{id}']['get']['operationId']);
         $this->assertSame('Consultar pedido de viagem', $paths['/travel-orders/{id}']['get']['summary']);
 
-        $this->assertSame('travelOrders.updateStatus', $paths['/travel-orders/{id}/status']['patch']['operationId']);
-        $this->assertSame('Atualizar status do pedido', $paths['/travel-orders/{id}/status']['patch']['summary']);
+        $this->assertSame('travelOrders.updateStatus', $paths['/travel-orders/{travelOrder}/status']['patch']['operationId']);
+        $this->assertSame('Atualizar status do pedido', $paths['/travel-orders/{travelOrder}/status']['patch']['summary']);
     }
 
     public function test_openapi_spec_documents_list_query_parameters(): void
@@ -121,6 +121,8 @@ final class ApiDocumentationTest extends TestCase
 
         $this->assertContains('status', $parameters);
         $this->assertContains('destination', $parameters);
+        $this->assertContains('page', $parameters);
+        $this->assertContains('per_page', $parameters);
         $this->assertContains('created_from', $parameters);
         $this->assertContains('departure_to', $parameters);
     }

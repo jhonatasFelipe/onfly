@@ -11,5 +11,5 @@ final class TravelOrderOpenApiSchemas
 {
     public const ITEM = 'array{id: string, requester_name: string, destination: string, departure_date: string, return_date: string, status: string}';
 
-    public const LIST = 'array{data: array<int, array{id: string, requester_name: string, destination: string, departure_date: string, return_date: string, status: string}>}';
+    public const LIST = 'array{data: array<int, array{id: string, requester_name: string, destination: string, departure_date: string, return_date: string, status: string}>, meta: array{current_page: int, per_page: int, total: int, last_page: int}}';
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Infrastructure\Facades\TravelOrder;
 
+use App\Application\Ports\TravelOrderEloquentTranslatorInterface;
 use App\Domain\TravelOrder\Entities\TravelOrder;
-use App\Infrastructure\Contracts\TravelOrderEloquentTranslatorInterface;
 use App\Infrastructure\Facades\TravelOrder\TravelOrderPersistenceFacade;
 use Mockery;
 use Tests\Unit\Domain\TravelOrder\Support\MakesTravelOrder;
@@ -19,7 +19,7 @@ final class TravelOrderPersistenceFacadeTest extends UnitTestCase
     {
         $translator = Mockery::mock(TravelOrderEloquentTranslatorInterface::class);
         $order = $this->makeTravelOrder();
-        $record = ['id' => $order->id()->value()];
+        $record = ['id' => $order->id()];
 
         $translator->shouldReceive('toDomain')
             ->once()
@@ -35,7 +35,7 @@ final class TravelOrderPersistenceFacadeTest extends UnitTestCase
     {
         $translator = Mockery::mock(TravelOrderEloquentTranslatorInterface::class);
         $order = $this->makeTravelOrder();
-        $expected = ['id' => $order->id()->value()];
+        $expected = ['id' => $order->id()];
 
         $translator->shouldReceive('toPersistenceArray')
             ->once()

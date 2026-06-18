@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Contracts;
+namespace App\Application\Ports;
 
 use App\Domain\TravelOrder\Entities\TravelOrder;
 
+/**
+ * Porta para tradução entre registros de persistência e entidades de domínio.
+ */
 interface TravelOrderEloquentTranslatorInterface
 {
     /**

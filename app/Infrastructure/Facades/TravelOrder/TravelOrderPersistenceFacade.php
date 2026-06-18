@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Facades\TravelOrder;
 
+use App\Application\Ports\TravelOrderEloquentTranslatorInterface;
 use App\Application\Ports\TravelOrderPersistenceFacadeInterface;
 use App\Domain\TravelOrder\Entities\TravelOrder;
-use App\Infrastructure\Contracts\TravelOrderEloquentTranslatorInterface;
 
 /**
  * GoF Facade pattern — not Illuminate\Support\Facades.

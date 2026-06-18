@@ -5,42 +5,39 @@ declare(strict_types=1);
 namespace App\Infrastructure\Adapters;
 
 use App\Application\Ports\AuthenticatedUserPort;
-use App\Domain\TravelOrder\ValueObjects\RequesterName;
-use App\Domain\TravelOrder\ValueObjects\UserId;
 use App\Infrastructure\Persistence\Eloquent\UserModel;
 use Illuminate\Support\Facades\Auth;
-use RuntimeException;
 
 /**
- * Implementação Sanctum de {@see AuthenticatedUserPort}.
+ * Resolve o usuário autenticado via Sanctum para uso nos use cases.
  */
 final class SanctumAuthenticatedUserAdapter implements AuthenticatedUserPort
 {
-    public function userId(): UserId
+    public function userId(): int
     {
-        $user = $this->user();
+        $user = $this->authenticatedUser();
 
-        return UserId::fromInt($user->id);
+        return $user->id;
     }
 
-    public function requesterName(): RequesterName
+    public function requesterName(): string
     {
-        $user = $this->user();
+        $user = $this->authenticatedUser();
 
-        return RequesterName::fromString($user->name);
+        return $user->name;
     }
 
     public function isAdmin(): bool
     {
-        return $this->user()->is_admin;
+        return $this->authenticatedUser()->is_admin;
     }
 
-    private function user(): UserModel
+    private function authenticatedUser(): UserModel
     {
         $user = Auth::user();
 
         if (! $user instanceof UserModel) {
-            throw new RuntimeException('Authenticated user is required.');
+            throw new \RuntimeException('Authenticated user is required.');
         }
 
         return $user;

@@ -26,7 +26,6 @@
         <exclude>
             <directory>app/Domain/TravelOrder/Repositories</directory>
             <directory>app/Application/Ports</directory>
-            <directory>app/Infrastructure/Contracts</directory>
             <file>app/Http/Controllers/Controller.php</file>
             <directory>app/Providers</directory>
         </exclude>

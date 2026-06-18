@@ -23,7 +23,7 @@ final class WebLoginAdminUseCase
         if (! $user->isAdmin) {
             $this->session->logout();
 
-            throw new AdminAccessRequiredException();
+            throw new AdminAccessRequiredException;
         }
 
         $this->session->login($user->id);

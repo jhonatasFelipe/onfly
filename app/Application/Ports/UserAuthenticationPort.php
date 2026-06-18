@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Ports;
 
 use App\Application\Auth\DTOs\AuthUserDto;
+use App\Application\Auth\Exceptions\InvalidCredentialsException;
 
 /**
  * Porta para autenticação de credenciais de usuário.
@@ -12,7 +13,7 @@ use App\Application\Auth\DTOs\AuthUserDto;
 interface UserAuthenticationPort
 {
     /**
-     * @throws \App\Application\Auth\Exceptions\InvalidCredentialsException
+     * @throws InvalidCredentialsException
      */
     public function authenticate(string $email, string $plainPassword): AuthUserDto;
 }

@@ -59,7 +59,7 @@ final class AuthUseCaseTest extends UnitTestCase
     {
         $this->authentication->expects($this->once())
             ->method('authenticate')
-            ->willThrowException(new InvalidCredentialsException());
+            ->willThrowException(new InvalidCredentialsException);
 
         $this->tokens->expects($this->never())->method('createForUser');
 

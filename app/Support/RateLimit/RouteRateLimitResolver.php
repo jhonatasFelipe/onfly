@@ -26,7 +26,7 @@ final class RouteRateLimitResolver
     }
 
     /**
-     * @param  list<mixed>  $middleware
+     * @param  array<mixed>  $middleware
      * @return list<array{
      *     name: string,
      *     max_attempts: int,

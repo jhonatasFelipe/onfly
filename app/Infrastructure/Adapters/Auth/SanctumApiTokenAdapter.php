@@ -26,6 +26,6 @@ final class SanctumApiTokenAdapter implements ApiTokenPort
             throw new RuntimeException('Authenticated user is required.');
         }
 
-        $user->currentAccessToken()?->delete();
+        $user->currentAccessToken()->delete();
     }
 }

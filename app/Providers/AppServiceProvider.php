@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Http\OpenApi\Scramble\RateLimitOperationExtension;
 use App\Infrastructure\Persistence\Eloquent\TravelOrderModel;
 use App\Infrastructure\Persistence\Eloquent\UserModel;
 use App\Policies\TravelOrderPolicy;
@@ -40,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         Scramble::configure()
-            ->withOperationTransformers(\App\Http\OpenApi\Scramble\RateLimitOperationExtension::class)
+            ->withOperationTransformers(RateLimitOperationExtension::class)
             ->withDocumentTransformers(function (OpenApi $openApi): void {
                 $openApi->secure(SecurityScheme::http('bearer'));
             });
@@ -49,48 +50,31 @@ class AppServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
         RateLimiter::for('api', function (Request $request): Limit {
-            $config = config('rate-limiting.api');
-
-            return Limit::perMinutes(
-                $config['decay_minutes'],
-                $config['max_attempts'],
-            )->by($request->user()?->id ?: $request->ip());
+            return $this->limitFromConfig('api')->by($request->user()?->id ?: $request->ip());
         });
 
         RateLimiter::for('auth', function (Request $request): Limit {
-            $config = config('rate-limiting.auth');
-
-            return Limit::perMinutes(
-                $config['decay_minutes'],
-                $config['max_attempts'],
-            )->by($request->ip());
+            return $this->limitFromConfig('auth')->by($request->ip());
         });
 
         RateLimiter::for('web', function (Request $request): Limit {
-            $config = config('rate-limiting.web');
-
-            return Limit::perMinutes(
-                $config['decay_minutes'],
-                $config['max_attempts'],
-            )->by($request->ip());
+            return $this->limitFromConfig('web')->by($request->ip());
         });
 
         RateLimiter::for('web-login', function (Request $request): Limit {
-            $config = config('rate-limiting.web-login');
-
-            return Limit::perMinutes(
-                $config['decay_minutes'],
-                $config['max_attempts'],
-            )->by($request->ip());
+            return $this->limitFromConfig('web-login')->by($request->ip());
         });
 
         RateLimiter::for('docs', function (Request $request): Limit {
-            $config = config('rate-limiting.docs');
-
-            return Limit::perMinutes(
-                $config['decay_minutes'],
-                $config['max_attempts'],
-            )->by($request->user()?->id ?: $request->ip());
+            return $this->limitFromConfig('docs')->by($request->user()?->id ?: $request->ip());
         });
+    }
+
+    private function limitFromConfig(string $name): Limit
+    {
+        return Limit::perMinutes(
+            config()->integer("rate-limiting.{$name}.decay_minutes"),
+            config()->integer("rate-limiting.{$name}.max_attempts"),
+        );
     }
 }

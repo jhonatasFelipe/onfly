@@ -25,6 +25,7 @@ final class LoginController extends Controller
      * Valida email e senha e retorna um token Bearer para uso nos endpoints protegidos.
      *
      * @unauthenticated
+     *
      * @operationId auth.loginUser
      */
     #[Response(200, 'Login realizado com token', type: 'array{token: string, user: array{id: int, name: string, email: string}}')]
@@ -34,8 +35,8 @@ final class LoginController extends Controller
     public function __invoke(LoginRequest $request, LoginUserUseCase $useCase): JsonResponse
     {
         $output = $useCase->execute(new LoginUserInput(
-            email: $request->validated('email'),
-            password: $request->validated('password'),
+            email: $request->string('email')->value(),
+            password: $request->string('password')->value(),
         ));
 
         return response()->json([

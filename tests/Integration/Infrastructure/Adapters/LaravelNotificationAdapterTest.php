@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Tests\Integration\Infrastructure\Adapters;
 
 use App\Domain\TravelOrder\Events\TravelOrderApproved;
-use App\Domain\TravelOrder\ValueObjects\TravelOrderId;
-use App\Domain\TravelOrder\ValueObjects\UserId;
+use App\Domain\TravelOrder\Events\TravelOrderCancelled;
 use App\Infrastructure\Adapters\LaravelNotificationAdapter;
 use App\Infrastructure\Facades\Notification\TravelOrderNotificationFacade;
 use App\Infrastructure\Persistence\Eloquent\UserModel;
 use App\Notifications\TravelOrderApprovedNotification;
+use App\Notifications\TravelOrderCancelledNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -24,10 +24,10 @@ final class LaravelNotificationAdapterTest extends TestCase
         Notification::fake();
 
         $user = UserModel::factory()->create();
-        $adapter = new LaravelNotificationAdapter(new TravelOrderNotificationFacade());
+        $adapter = new LaravelNotificationAdapter(new TravelOrderNotificationFacade);
         $event = new TravelOrderApproved(
-            TravelOrderId::fromString('550e8400-e29b-41d4-a716-446655440000'),
-            UserId::fromInt($user->id),
+            '550e8400-e29b-41d4-a716-446655440000',
+            $user->id,
         );
 
         $adapter->notifyApproved($event);
@@ -40,14 +40,14 @@ final class LaravelNotificationAdapterTest extends TestCase
         Notification::fake();
 
         $user = UserModel::factory()->create();
-        $adapter = new LaravelNotificationAdapter(new TravelOrderNotificationFacade());
-        $event = new \App\Domain\TravelOrder\Events\TravelOrderCancelled(
-            TravelOrderId::fromString('550e8400-e29b-41d4-a716-446655440000'),
-            UserId::fromInt($user->id),
+        $adapter = new LaravelNotificationAdapter(new TravelOrderNotificationFacade);
+        $event = new TravelOrderCancelled(
+            '550e8400-e29b-41d4-a716-446655440000',
+            $user->id,
         );
 
         $adapter->notifyCancelled($event);
 
-        Notification::assertSentTo($user, \App\Notifications\TravelOrderCancelledNotification::class);
+        Notification::assertSentTo($user, TravelOrderCancelledNotification::class);
     }
 }

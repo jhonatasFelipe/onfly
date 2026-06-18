@@ -1,6 +1,6 @@
 .PHONY: up down build build-fresh restart logs shell artisan composer \
         install-laravel configure-env migrate fix-permissions wait-app wait-mysql post-up setup ps about docs \
-        install-deps seed key-generate
+        install-deps seed key-generate phpstan pint validate-static
 
 up: post-up
 
@@ -43,6 +43,14 @@ about:
 
 docs:
 	@echo "API docs: http://localhost:8080/docs/api"
+
+phpstan:
+	docker compose exec app vendor/bin/phpstan analyse
+
+pint:
+	docker compose exec app vendor/bin/pint --test
+
+validate-static: pint phpstan
 
 wait-app:
 	@echo "Aguardando container app..."

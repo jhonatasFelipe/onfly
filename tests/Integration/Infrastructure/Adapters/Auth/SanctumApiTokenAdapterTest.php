@@ -8,7 +8,6 @@ use App\Infrastructure\Adapters\Auth\SanctumApiTokenAdapter;
 use App\Infrastructure\Persistence\Eloquent\UserModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
-use Laravel\Sanctum\Sanctum;
 use RuntimeException;
 use Tests\TestCase;
 

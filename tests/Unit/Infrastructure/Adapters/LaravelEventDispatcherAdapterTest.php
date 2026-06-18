@@ -14,8 +14,8 @@ final class LaravelEventDispatcherAdapterTest extends TestCase
     {
         Event::fake();
 
-        $event = new \stdClass();
-        $adapter = new LaravelEventDispatcherAdapter();
+        $event = new \stdClass;
+        $adapter = new LaravelEventDispatcherAdapter;
 
         $adapter->dispatch($event);
 

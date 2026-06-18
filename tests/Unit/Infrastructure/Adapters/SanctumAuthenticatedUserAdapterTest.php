@@ -20,9 +20,9 @@ final class SanctumAuthenticatedUserAdapterTest extends TestCase
         $user = UserModel::factory()->create();
         Auth::login($user);
 
-        $adapter = new SanctumAuthenticatedUserAdapter();
+        $adapter = new SanctumAuthenticatedUserAdapter;
 
-        $this->assertSame($user->id, $adapter->userId()->value());
+        $this->assertSame($user->id, $adapter->userId());
     }
 
     public function test_requester_name_returns_authenticated_user_name(): void
@@ -30,9 +30,9 @@ final class SanctumAuthenticatedUserAdapterTest extends TestCase
         $user = UserModel::factory()->create(['name' => 'Alice']);
         Auth::login($user);
 
-        $adapter = new SanctumAuthenticatedUserAdapter();
+        $adapter = new SanctumAuthenticatedUserAdapter;
 
-        $this->assertSame('Alice', $adapter->requesterName()->value());
+        $this->assertSame('Alice', $adapter->requesterName());
     }
 
     public function test_is_admin_returns_authenticated_user_admin_flag(): void
@@ -40,7 +40,7 @@ final class SanctumAuthenticatedUserAdapterTest extends TestCase
         $user = UserModel::factory()->admin()->create();
         Auth::login($user);
 
-        $adapter = new SanctumAuthenticatedUserAdapter();
+        $adapter = new SanctumAuthenticatedUserAdapter;
 
         $this->assertTrue($adapter->isAdmin());
     }
@@ -49,7 +49,7 @@ final class SanctumAuthenticatedUserAdapterTest extends TestCase
     {
         Auth::logout();
 
-        $adapter = new SanctumAuthenticatedUserAdapter();
+        $adapter = new SanctumAuthenticatedUserAdapter;
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Authenticated user is required.');

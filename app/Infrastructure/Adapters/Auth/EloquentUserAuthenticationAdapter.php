@@ -15,7 +15,7 @@ final class EloquentUserAuthenticationAdapter implements UserAuthenticationPort
     public function authenticate(string $email, string $plainPassword): AuthUserDto
     {
         if (! Auth::attempt(['email' => $email, 'password' => $plainPassword])) {
-            throw new InvalidCredentialsException();
+            throw new InvalidCredentialsException;
         }
 
         $user = Auth::user();
@@ -23,7 +23,7 @@ final class EloquentUserAuthenticationAdapter implements UserAuthenticationPort
         if (! $user instanceof UserModel) {
             Auth::logout();
 
-            throw new InvalidCredentialsException();
+            throw new InvalidCredentialsException;
         }
 
         return $this->toDto($user);

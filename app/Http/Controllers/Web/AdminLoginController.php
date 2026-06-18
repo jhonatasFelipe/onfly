@@ -28,8 +28,8 @@ final class AdminLoginController extends Controller
     {
         try {
             $useCase->execute(new WebLoginAdminInput(
-                email: $request->validated('email'),
-                password: $request->validated('password'),
+                email: $request->string('email')->value(),
+                password: $request->string('password')->value(),
             ));
         } catch (InvalidCredentialsException) {
             return back()

@@ -25,6 +25,7 @@ final class RegisterController extends Controller
      * Cria uma nova conta de usuário e retorna um token Sanctum para autenticação nos demais endpoints.
      *
      * @unauthenticated
+     *
      * @operationId auth.registerUser
      */
     #[Response(201, 'Usuário registrado com token', type: 'array{token: string, user: array{id: int, name: string, email: string}}')]
@@ -33,9 +34,9 @@ final class RegisterController extends Controller
     public function __invoke(RegisterRequest $request, RegisterUserUseCase $useCase): JsonResponse
     {
         $output = $useCase->execute(new RegisterUserInput(
-            name: $request->validated('name'),
-            email: $request->validated('email'),
-            password: $request->validated('password'),
+            name: $request->string('name')->value(),
+            email: $request->string('email')->value(),
+            password: $request->string('password')->value(),
         ));
 
         return response()->json([
